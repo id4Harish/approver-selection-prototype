@@ -6,25 +6,22 @@ import { Icon } from '@fluentui/react/lib/Icon';
 import { Label } from '@fluentui/react/lib/Label';
 import { IApprover } from '../types/models';
 
-export type ApproverComboBoxVariant = 'default' | 'suggestions';
-
-export interface IApproverComboBoxProps {
+export interface IApproverSelfApprovalProps {
   label: string;
   roleDescription: string;
   required?: boolean;
   stepNumber: number;
   approvers: IApprover[];
-  currentUser?: IApprover;
+  currentUser: IApprover;
   selectedApprover?: IApprover;
   onApproverSelected: (approver: IApprover | undefined) => void;
   disabled?: boolean;
+  /** Whether the current user is eligible for self-approval */
+  selfApprovalEnabled: boolean;
   /** Show error state on the pill */
   error?: boolean;
-  /** 'default' = show results only after typing; 'suggestions' = show all on focus, filter on type */
-  variant?: ApproverComboBoxVariant;
 }
 
-/** Get initials from a name, e.g. "Jonah Klein" => "JK" */
 const getInitials = (name: string): string => {
   const parts = name.trim().split(/\s+/);
   if (parts.length >= 2) {
@@ -84,11 +81,6 @@ const getClassNames = memoizeFunction((theme: ITheme) =>
         borderColor: theme.palette.themePrimary,
       },
     },
-    inputWrapperDisabled: {
-      backgroundColor: theme.palette.neutralLighter,
-      borderColor: theme.palette.neutralLighter,
-      cursor: 'default',
-    },
     input: {
       flex: 1,
       border: 'none',
@@ -103,7 +95,7 @@ const getClassNames = memoizeFunction((theme: ITheme) =>
         color: theme.palette.neutralSecondary,
       },
     },
-    // People Pill (selected approver chip)
+    // People Pill
     peoplePill: {
       display: 'inline-flex',
       alignItems: 'center',
@@ -191,7 +183,7 @@ const getClassNames = memoizeFunction((theme: ITheme) =>
         color: theme.palette.white,
       },
     },
-    // Dropdown callout — positioned relative to inputWrapper
+    // Dropdown
     dropdown: {
       position: 'absolute' as const,
       top: '100%',
@@ -201,17 +193,86 @@ const getClassNames = memoizeFunction((theme: ITheme) =>
       backgroundColor: theme.palette.white,
       border: `1px solid ${theme.palette.neutralLight}`,
       boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-      maxHeight: 320,
+      maxHeight: 360,
       overflowY: 'auto' as const,
       marginTop: 2,
     },
-    dropdownHeader: {
+    // Self row (pinned at top)
+    selfRow: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 10,
       padding: '8px 12px',
-      fontSize: 12,
-      fontWeight: 600,
-      color: theme.palette.neutralSecondary,
+      cursor: 'pointer',
+      borderBottom: `1px solid ${theme.palette.neutralLight}`,
+      ':hover': {
+        backgroundColor: theme.palette.neutralLighterAlt,
+      },
     },
-    // Dropdown option with persona
+    selfRowDisabled: {
+      cursor: 'default',
+      ':hover': {
+        backgroundColor: 'transparent',
+      },
+    },
+    selfAvatar: {
+      width: 32,
+      height: 32,
+      borderRadius: '50%',
+      backgroundColor: 'rgb(79, 107, 237)',
+      color: theme.palette.white,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: 13,
+      fontWeight: 600,
+      flexShrink: 0,
+    },
+    selfAvatarDisabled: {
+      backgroundColor: 'rgb(161, 159, 157)',
+    },
+    selfTextContainer: {
+      display: 'flex',
+      flexDirection: 'column' as const,
+      minWidth: 0,
+      flex: 1,
+    },
+    selfName: {
+      fontSize: 14,
+      fontWeight: 400,
+      color: theme.palette.neutralPrimary,
+      lineHeight: '20px',
+    },
+    selfNameDisabled: {
+      color: 'rgb(161, 159, 157)',
+    },
+    selfMeta: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 6,
+      fontSize: 12,
+      color: theme.palette.neutralSecondary,
+      lineHeight: '16px',
+    },
+    selfMetaDisabled: {
+      color: 'rgb(161, 159, 157)',
+    },
+    selfBadge: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: 4,
+    },
+    selfBadgeDot: {
+      width: 6,
+      height: 6,
+      borderRadius: '50%',
+      backgroundColor: theme.palette.neutralSecondary,
+      flexShrink: 0,
+    },
+    selfBadgeDotDisabled: {
+      backgroundColor: 'rgb(161, 159, 157)',
+    },
+    // Regular option row
     optionRow: {
       display: 'flex',
       alignItems: 'center',
@@ -265,7 +326,7 @@ const getClassNames = memoizeFunction((theme: ITheme) =>
   })
 );
 
-export const ApproverComboBox: React.FC<IApproverComboBoxProps> = ({
+export const ApproverSelfApproval: React.FC<IApproverSelfApprovalProps> = ({
   label,
   roleDescription,
   required = false,
@@ -275,8 +336,8 @@ export const ApproverComboBox: React.FC<IApproverComboBoxProps> = ({
   selectedApprover,
   onApproverSelected,
   disabled = false,
+  selfApprovalEnabled,
   error = false,
-  variant = 'default',
 }) => {
   const theme = useTheme();
   const classNames = getClassNames(theme);
@@ -288,20 +349,38 @@ export const ApproverComboBox: React.FC<IApproverComboBoxProps> = ({
 
   const displayLabel = `${label} (${roleDescription})`;
 
-  // Filter approvers based on typed text (match from starting letters)
+  // Other approvers (exclude current user)
+  const otherApprovers = React.useMemo(
+    () => approvers.filter((a) => a.key !== currentUser.key),
+    [approvers, currentUser]
+  );
+
+  // Filtered other approvers (match from starting letters of name parts or email)
   const filteredApprovers = React.useMemo(() => {
-    if (!filterText) return approvers;
+    if (!filterText) return otherApprovers;
     const lower = filterText.toLowerCase();
-    return approvers.filter((a) => {
+    return otherApprovers.filter((a) => {
       const nameParts = a.name.toLowerCase().split(/\s+/);
       return (
         nameParts.some((part) => part.startsWith(lower)) ||
         a.email.toLowerCase().startsWith(lower)
       );
     });
-  }, [approvers, filterText]);
+  }, [otherApprovers, filterText]);
 
-  // Close dropdown on outside click
+  // Self is "eligible" visually when there's no filter text OR the filter matches the current user
+  const selfMatchesFilter = React.useMemo(() => {
+    if (!filterText) return true;
+    const lower = filterText.toLowerCase();
+    const nameParts = currentUser.name.toLowerCase().split(/\s+/);
+    return (
+      nameParts.some((part) => part.startsWith(lower)) ||
+      currentUser.email.toLowerCase().startsWith(lower) ||
+      'you'.startsWith(lower)
+    );
+  }, [currentUser, filterText]);
+
+  // Close on outside click
   React.useEffect(() => {
     if (!isOpen) return;
     const handleClickOutside = (e: MouseEvent) => {
@@ -323,25 +402,21 @@ export const ApproverComboBox: React.FC<IApproverComboBoxProps> = ({
     []
   );
 
-  const handleInputBlur = React.useCallback((e: React.FocusEvent<HTMLInputElement>) => {
-    // Close dropdown if focus moves outside the wrapper
-    if (wrapperRef.current && !wrapperRef.current.contains(e.relatedTarget as Node)) {
-      setIsOpen(false);
-      setHighlightedIndex(-1);
-    }
-  }, []);
-
   const handleInputFocus = React.useCallback(() => {
     if (!selectedApprover) {
-      if (variant === 'suggestions') {
-        // Suggestions variant: always open on focus
-        setIsOpen(true);
-      } else if (filterText.length > 0) {
-        // Default variant: only open if already typed something
-        setIsOpen(true);
-      }
+      setIsOpen(true);
     }
-  }, [selectedApprover, filterText, variant]);
+  }, [selectedApprover]);
+
+  const handleInputBlur = React.useCallback(
+    (e: React.FocusEvent<HTMLInputElement>) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.relatedTarget as Node)) {
+        setIsOpen(false);
+        setHighlightedIndex(-1);
+      }
+    },
+    []
+  );
 
   const handleSelect = React.useCallback(
     (approver: IApprover) => {
@@ -353,6 +428,12 @@ export const ApproverComboBox: React.FC<IApproverComboBoxProps> = ({
     [onApproverSelected]
   );
 
+  const handleSelfSelect = React.useCallback(() => {
+    if (selfApprovalEnabled) {
+      handleSelect({ ...currentUser, isSelf: true });
+    }
+  }, [selfApprovalEnabled, currentUser, handleSelect]);
+
   const handleDismiss = React.useCallback(() => {
     onApproverSelected(undefined);
     setFilterText('');
@@ -361,26 +442,31 @@ export const ApproverComboBox: React.FC<IApproverComboBoxProps> = ({
 
   const handleKeyDown = React.useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
+      // index -1 = self row, 0+ = filteredApprovers
       if (e.key === 'ArrowDown') {
         e.preventDefault();
         setIsOpen(true);
         setHighlightedIndex((prev) =>
-          prev < filteredApprovers.length - 1 ? prev + 1 : 0
+          prev < filteredApprovers.length - 1 ? prev + 1 : -1
         );
       } else if (e.key === 'ArrowUp') {
         e.preventDefault();
         setHighlightedIndex((prev) =>
-          prev > 0 ? prev - 1 : filteredApprovers.length - 1
+          prev > -1 ? prev - 1 : filteredApprovers.length - 1
         );
-      } else if (e.key === 'Enter' && highlightedIndex >= 0) {
+      } else if (e.key === 'Enter') {
         e.preventDefault();
-        handleSelect(filteredApprovers[highlightedIndex]);
+        if (highlightedIndex === -1 && selfApprovalEnabled) {
+          handleSelfSelect();
+        } else if (highlightedIndex >= 0) {
+          handleSelect(filteredApprovers[highlightedIndex]);
+        }
       } else if (e.key === 'Escape') {
         setIsOpen(false);
         setHighlightedIndex(-1);
       }
     },
-    [filteredApprovers, highlightedIndex, handleSelect]
+    [filteredApprovers, highlightedIndex, handleSelect, handleSelfSelect, selfApprovalEnabled]
   );
 
   const handleWrapperClick = React.useCallback(() => {
@@ -388,6 +474,16 @@ export const ApproverComboBox: React.FC<IApproverComboBoxProps> = ({
       inputRef.current?.focus();
     }
   }, [disabled]);
+
+  // Determine pill display text
+  const pillText = selectedApprover?.isSelf
+    ? 'You (Self Approval)'
+    : selectedApprover?.name || '';
+
+  // Determine self badge text based on eligibility only (not filter text)
+  const selfBadgeText = selfApprovalEnabled ? 'Self Approval' : 'Not Eligible';
+
+  const isSelfClickable = selfApprovalEnabled;
 
   return (
     <div className={classNames.root} ref={wrapperRef}>
@@ -403,90 +499,110 @@ export const ApproverComboBox: React.FC<IApproverComboBoxProps> = ({
 
           <div style={{ position: 'relative' }}>
             <div
-              className={`${classNames.inputWrapper} ${disabled ? classNames.inputWrapperDisabled : ''}`}
+              className={classNames.inputWrapper}
               onClick={handleWrapperClick}
             >
-            {/* Selected approver as People Pill */}
-            {selectedApprover && (
-              <div className={`${classNames.peoplePill} ${error ? classNames.peoplePillError : ''}`}>
-                {error ? (
-                  <div className={classNames.pillErrorIcon}>
-                    <Icon iconName="Warning" />
-                  </div>
-                ) : (
-                  <div className={classNames.pillAvatar}>
-                    {getInitials(selectedApprover.name)}
-                  </div>
-                )}
-                <span className={`${classNames.pillName} ${error ? classNames.pillNameError : ''}`}>
-                  {error ? 'invalid' : selectedApprover.name}
-                </span>
-                <button
-                  className={classNames.pillDismiss}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDismiss();
-                  }}
-                  title="Remove"
-                  disabled={disabled}
-                >
-                  <Icon iconName="Cancel" />
-                </button>
-              </div>
-            )}
-
-            {/* Text input (hidden when approver is selected) */}
-            {!selectedApprover && (
-              <input
-                ref={inputRef}
-                className={classNames.input}
-                value={filterText}
-                onChange={handleInputChange}
-                onFocus={handleInputFocus}
-                onBlur={handleInputBlur}
-                onKeyDown={handleKeyDown}
-                placeholder="Type a name or email"
-                disabled={disabled}
-              />
-            )}
-          </div>
-
-          {/* Dropdown suggestions */}
-          {isOpen && !selectedApprover && filteredApprovers.length > 0 &&
-            (variant === 'suggestions' || filterText.length > 0) && (
-            <div className={classNames.dropdown}>
-              {variant === 'suggestions' && filterText.length === 0 && (
-                <div className={classNames.dropdownHeader}>Suggestions</div>
+              {/* Selected approver as People Pill */}
+              {selectedApprover && (
+                <div className={`${classNames.peoplePill} ${error ? classNames.peoplePillError : ''}`}>
+                  {error ? (
+                    <div className={classNames.pillErrorIcon}>
+                      <Icon iconName="Warning" />
+                    </div>
+                  ) : (
+                    <div className={classNames.pillAvatar}>
+                      {getInitials(selectedApprover.name)}
+                    </div>
+                  )}
+                  <span className={`${classNames.pillName} ${error ? classNames.pillNameError : ''}`}>
+                    {error ? 'invalid' : pillText}
+                  </span>
+                  <button
+                    className={classNames.pillDismiss}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDismiss();
+                    }}
+                    title="Remove"
+                    disabled={disabled}
+                  >
+                    <Icon iconName="Cancel" />
+                  </button>
+                </div>
               )}
-              {filteredApprovers.map((approver, index) => (
+
+              {/* Text input */}
+              {!selectedApprover && (
+                <input
+                  ref={inputRef}
+                  className={classNames.input}
+                  value={filterText}
+                  onChange={handleInputChange}
+                  onFocus={handleInputFocus}
+                  onBlur={handleInputBlur}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Type a name or email"
+                  disabled={disabled}
+                />
+              )}
+            </div>
+
+            {/* Dropdown */}
+            {isOpen && !selectedApprover && (
+              <div className={classNames.dropdown}>
+                {/* Pinned "You" row at top */}
                 <div
-                  key={approver.key}
-                  className={`${classNames.optionRow} ${
-                    index === highlightedIndex
-                      ? classNames.optionRowHighlighted
-                      : ''
-                  }`}
+                  className={`${classNames.selfRow} ${!isSelfClickable ? classNames.selfRowDisabled : ''}`}
                   onMouseDown={(e) => {
                     e.preventDefault();
-                    handleSelect(approver);
+                    if (isSelfClickable) handleSelfSelect();
                   }}
-                  onMouseEnter={() => setHighlightedIndex(index)}
                 >
-                  <div className={classNames.optionAvatar}>
-                    {getInitials(approver.name)}
+                  <div className={`${classNames.selfAvatar} ${!isSelfClickable ? classNames.selfAvatarDisabled : ''}`}>
+                    {getInitials(currentUser.name)}
                   </div>
-                  <div className={classNames.optionTextContainer}>
-                    <span className={classNames.optionName}>
-                      {approver.name}
-                    </span>
-                    <span className={classNames.optionEmail}>
-                      {approver.email}
+                  <div className={classNames.selfTextContainer}>
+                    <span className={`${classNames.selfName} ${!isSelfClickable ? classNames.selfNameDisabled : ''}`}>You</span>
+                    <span className={`${classNames.selfMeta} ${!isSelfClickable ? classNames.selfMetaDisabled : ''}`}>
+                      {currentUser.email}
+                      <span className={classNames.selfBadge}>
+                        <span className={`${classNames.selfBadgeDot} ${!isSelfClickable ? classNames.selfBadgeDotDisabled : ''}`} />
+                        {selfBadgeText}
+                      </span>
                     </span>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
+
+                {/* Other approvers */}
+                {filteredApprovers.map((approver, index) => (
+                  <div
+                    key={approver.key}
+                    className={`${classNames.optionRow} ${
+                      index === highlightedIndex
+                        ? classNames.optionRowHighlighted
+                        : ''
+                    }`}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      handleSelect(approver);
+                    }}
+                    onMouseEnter={() => setHighlightedIndex(index)}
+                  >
+                    <div className={classNames.optionAvatar}>
+                      {getInitials(approver.name)}
+                    </div>
+                    <div className={classNames.optionTextContainer}>
+                      <span className={classNames.optionName}>
+                        {approver.name}
+                      </span>
+                      <span className={classNames.optionEmail}>
+                        {approver.email}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>

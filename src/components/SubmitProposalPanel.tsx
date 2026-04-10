@@ -6,6 +6,8 @@ import { Panel, PanelType } from '@fluentui/react/lib/Panel';
 import { PrimaryButton, DefaultButton } from '@fluentui/react/lib/Button';
 import { Text } from '@fluentui/react/lib/Text';
 import { ApproverComboBox } from './ApproverComboBox';
+import { ApproverSelfApproval } from './ApproverSelfApproval';
+import { ApproverDropdown } from './ApproverDropdown';
 import { IApprover } from '../types/models';
 import { APPROVERS, CURRENT_USER, APPROVER_POLICY } from '../data/mockData';
 
@@ -22,11 +24,21 @@ const getClassNames = memoizeFunction((theme: ITheme) =>
       display: 'flex',
       flexDirection: 'column',
       height: '100%',
+      paddingBottom: 24,
     },
     description: {
       ...theme.fonts.medium,
       color: theme.semanticColors.bodyText,
       marginBottom: 24,
+    },
+    variantSeparator: {
+      marginTop: 32,
+      marginBottom: 16,
+      paddingTop: 16,
+      borderTop: `1px solid ${theme.palette.neutralLight}`,
+      ...theme.fonts.mediumPlus,
+      fontWeight: 600,
+      color: theme.palette.neutralSecondary,
     },
     footer: {
       display: 'flex',
@@ -52,10 +64,12 @@ export const SubmitProposalPanel: React.FC<ISubmitProposalPanelProps> = ({
   const theme = useTheme();
   const classNames = getClassNames(theme);
   const [selectedApprover, setSelectedApprover] = React.useState<IApprover | undefined>();
-  const [submitted, setSubmitted] = React.useState(false);
+  const [selectedApproverSuggestions, setSelectedApproverSuggestions] = React.useState<IApprover | undefined>();
+  const [selectedSelfEnabled, setSelectedSelfEnabled] = React.useState<IApprover | undefined>();
+  const [selectedSelfDisabled, setSelectedSelfDisabled] = React.useState<IApprover | undefined>();
+  const [selectedApproverDropdown, setSelectedApproverDropdown] = React.useState<IApprover | undefined>();
 
   const handleSubmit = React.useCallback(() => {
-    setSubmitted(true);
     if (selectedApprover) {
       onSubmit(selectedApprover);
     }
@@ -63,13 +77,12 @@ export const SubmitProposalPanel: React.FC<ISubmitProposalPanelProps> = ({
 
   const handleDismiss = React.useCallback(() => {
     setSelectedApprover(undefined);
-    setSubmitted(false);
+    setSelectedApproverSuggestions(undefined);
+    setSelectedSelfEnabled(undefined);
+    setSelectedSelfDisabled(undefined);
+    setSelectedApproverDropdown(undefined);
     onDismiss();
   }, [onDismiss]);
-
-  const errorMessage = submitted && !selectedApprover
-    ? 'An approver is required to submit the proposal.'
-    : undefined;
 
   const onRenderFooterContent = React.useCallback(() => (
     <div className={classNames.footer}>
@@ -78,10 +91,10 @@ export const SubmitProposalPanel: React.FC<ISubmitProposalPanelProps> = ({
       <PrimaryButton
         text="Submit"
         onClick={handleSubmit}
-        disabled={submitted && !selectedApprover}
+        disabled={!selectedApprover}
       />
     </div>
-  ), [classNames, onBack, handleSubmit, submitted, selectedApprover]);
+  ), [classNames, onBack, handleSubmit, selectedApprover]);
 
   return (
     <Panel
@@ -93,7 +106,7 @@ export const SubmitProposalPanel: React.FC<ISubmitProposalPanelProps> = ({
       onRenderFooterContent={onRenderFooterContent}
       styles={{
         main: { padding: 0 },
-        content: { padding: '0 24px', flex: 1 },
+        content: { padding: '0 24px', flex: 1, overflowY: 'auto' },
         header: { paddingLeft: 24 },
         footerInner: { padding: '0 24px 16px' },
         commands: { marginTop: 0 },
@@ -101,20 +114,84 @@ export const SubmitProposalPanel: React.FC<ISubmitProposalPanelProps> = ({
     >
       <div className={classNames.panelContent}>
         <Text className={classNames.description} block>
-          Select or type an approver's name (including your own) for the policies that are not automatically selected.
+          Start typing to search for an approver, for policies that aren't automatically selected.
         </Text>
+
+        {/* Variant 1: Default (type to search) */}
+        <ApproverComboBox
+          label={APPROVER_POLICY.label}
+          roleDescription={APPROVER_POLICY.roleDescription}
+          required={APPROVER_POLICY.required}
+          stepNumber={1}
+          approvers={APPROVERS}
+          currentUser={CURRENT_USER}
+          selectedApprover={selectedApprover}
+          onApproverSelected={setSelectedApprover}
+          disabled={false}
+        />
+
+        {/* Variant 2: Suggestions (show all on focus) */}
+        <div className={classNames.variantSeparator}>Suggestions variant</div>
 
         <ApproverComboBox
           label={APPROVER_POLICY.label}
           roleDescription={APPROVER_POLICY.roleDescription}
           required={APPROVER_POLICY.required}
-          stepNumber={APPROVER_POLICY.id}
+          stepNumber={1}
           approvers={APPROVERS}
           currentUser={CURRENT_USER}
-          selectedApprover={selectedApprover}
-          onApproverSelected={setSelectedApprover}
-          errorMessage={errorMessage}
+          selectedApprover={selectedApproverSuggestions}
+          onApproverSelected={setSelectedApproverSuggestions}
+          disabled={false}
+          variant="suggestions"
         />
+
+        {/* Variant 3: Self approval enabled
+        <div className={classNames.variantSeparator}>Self approval (eligible)</div>
+
+        <ApproverSelfApproval
+          label={APPROVER_POLICY.label}
+          roleDescription={APPROVER_POLICY.roleDescription}
+          required={APPROVER_POLICY.required}
+          stepNumber={1}
+          approvers={APPROVERS}
+          currentUser={CURRENT_USER}
+          selectedApprover={selectedSelfEnabled}
+          onApproverSelected={setSelectedSelfEnabled}
+          selfApprovalEnabled={true}
+        />
+        */}
+
+        {/* Variant 4: Self approval disabled
+        <div className={classNames.variantSeparator}>Self approval (not eligible)</div>
+
+        <ApproverSelfApproval
+          label={APPROVER_POLICY.label}
+          roleDescription={APPROVER_POLICY.roleDescription}
+          required={APPROVER_POLICY.required}
+          stepNumber={1}
+          approvers={APPROVERS}
+          currentUser={CURRENT_USER}
+          selectedApprover={selectedSelfDisabled}
+          onApproverSelected={setSelectedSelfDisabled}
+          selfApprovalEnabled={false}
+        />
+        */}
+
+        {/* Variant 5: Dropdown with search
+        <div className={classNames.variantSeparator}>Dropdown with search variant</div>
+
+        <ApproverDropdown
+          label={APPROVER_POLICY.label}
+          roleDescription={APPROVER_POLICY.roleDescription}
+          required={APPROVER_POLICY.required}
+          stepNumber={1}
+          approvers={APPROVERS}
+          selectedApprover={selectedApproverDropdown}
+          onApproverSelected={setSelectedApproverDropdown}
+          disabled={false}
+        />
+        */}
       </div>
     </Panel>
   );
