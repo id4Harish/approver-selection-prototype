@@ -8,6 +8,9 @@ import { Text } from '@fluentui/react/lib/Text';
 import { ApproverComboBox } from './ApproverComboBox';
 import { ApproverSelfApproval } from './ApproverSelfApproval';
 import { ApproverDropdown } from './ApproverDropdown';
+import { ApproverComboBoxPersona } from './ApproverComboBoxPersona';
+import { ApproverComboBoxInline } from './ApproverComboBoxInline';
+import { ApproverSearchPicker } from './ApproverSearchPicker';
 import { IApprover } from '../types/models';
 import { APPROVERS, CURRENT_USER, APPROVER_POLICY } from '../data/mockData';
 
@@ -68,6 +71,9 @@ export const SubmitProposalPanel: React.FC<ISubmitProposalPanelProps> = ({
   const [selectedSelfEnabled, setSelectedSelfEnabled] = React.useState<IApprover | undefined>();
   const [selectedSelfDisabled, setSelectedSelfDisabled] = React.useState<IApprover | undefined>();
   const [selectedApproverDropdown, setSelectedApproverDropdown] = React.useState<IApprover | undefined>();
+  const [selectedApproverPersona, setSelectedApproverPersona] = React.useState<IApprover | undefined>();
+  const [selectedApproverInline, setSelectedApproverInline] = React.useState<IApprover | undefined>();
+  const [selectedApproverSearch, setSelectedApproverSearch] = React.useState<IApprover | undefined>();
 
   const handleSubmit = React.useCallback(() => {
     if (selectedApprover) {
@@ -81,6 +87,9 @@ export const SubmitProposalPanel: React.FC<ISubmitProposalPanelProps> = ({
     setSelectedSelfEnabled(undefined);
     setSelectedSelfDisabled(undefined);
     setSelectedApproverDropdown(undefined);
+    setSelectedApproverPersona(undefined);
+    setSelectedApproverInline(undefined);
+    setSelectedApproverSearch(undefined);
     onDismiss();
   }, [onDismiss]);
 
@@ -130,7 +139,7 @@ export const SubmitProposalPanel: React.FC<ISubmitProposalPanelProps> = ({
           disabled={false}
         />
 
-        {/* Variant 2: Suggestions (show all on focus) */}
+        {/* Variant 2: Suggestions (show all on focus)
         <div className={classNames.variantSeparator}>Suggestions variant</div>
 
         <ApproverComboBox
@@ -145,6 +154,7 @@ export const SubmitProposalPanel: React.FC<ISubmitProposalPanelProps> = ({
           disabled={false}
           variant="suggestions"
         />
+        */}
 
         {/* Variant 3: Self approval enabled
         <div className={classNames.variantSeparator}>Self approval (eligible)</div>
@@ -189,6 +199,50 @@ export const SubmitProposalPanel: React.FC<ISubmitProposalPanelProps> = ({
           approvers={APPROVERS}
           selectedApprover={selectedApproverDropdown}
           onApproverSelected={setSelectedApproverDropdown}
+          disabled={false}
+        />
+        */}
+
+        {/* Variant 6: Persona suggestions with contextual menu */}
+        <div className={classNames.variantSeparator}>Existing variant</div>
+
+        <ApproverComboBoxPersona
+          label={APPROVER_POLICY.label}
+          roleDescription={APPROVER_POLICY.roleDescription}
+          required={APPROVER_POLICY.required}
+          stepNumber={1}
+          approvers={APPROVERS}
+          selectedApprover={selectedApproverPersona}
+          onApproverSelected={setSelectedApproverPersona}
+          disabled={false}
+        />
+
+        {/* Variant 7: Inline value with clear button */}
+        <div className={classNames.variantSeparator}>New variant</div>
+
+        <ApproverComboBoxInline
+          label={APPROVER_POLICY.label}
+          roleDescription={APPROVER_POLICY.roleDescription}
+          required={APPROVER_POLICY.required}
+          stepNumber={1}
+          approvers={APPROVERS}
+          selectedApprover={selectedApproverInline}
+          onApproverSelected={setSelectedApproverInline}
+          disabled={false}
+        />
+
+        {/* Variant 8: SearchBox people picker
+        <div className={classNames.variantSeparator}>People picker variant</div>
+
+        <ApproverSearchPicker
+          label={APPROVER_POLICY.label}
+          roleDescription={APPROVER_POLICY.roleDescription}
+          required={APPROVER_POLICY.required}
+          stepNumber={1}
+          approvers={APPROVERS}
+          currentUser={CURRENT_USER}
+          selectedApprover={selectedApproverSearch}
+          onApproverSelected={setSelectedApproverSearch}
           disabled={false}
         />
         */}
