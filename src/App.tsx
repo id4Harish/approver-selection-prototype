@@ -8,12 +8,14 @@ import { Stack } from '@fluentui/react/lib/Stack';
 import { MessageBar, MessageBarType } from '@fluentui/react/lib/MessageBar';
 import { Pivot, PivotItem } from '@fluentui/react/lib/Pivot';
 import { DetailsList, IColumn, SelectionMode, DetailsListLayoutMode } from '@fluentui/react/lib/DetailsList';
-import { Link } from '@fluentui/react/lib/Link';
+import { Link as FluentLink } from '@fluentui/react/lib/Link';
 import { Icon } from '@fluentui/react/lib/Icon';
 import { SearchBox } from '@fluentui/react/lib/SearchBox';
 import { Persona, PersonaSize } from '@fluentui/react/lib/Persona';
 import { SubmitProposalPanel } from './components/SubmitProposalPanel';
 import { IApprover } from './types/models';
+import { Routes, Route } from 'react-router-dom';
+import { ComponentDocs } from './pages/ComponentDocs';
 
 const getClassNames = memoizeFunction((theme: ITheme) =>
   mergeStyleSets({
@@ -584,7 +586,7 @@ const PRODUCT_FINDER_FAVORITES = ['Microsoft 365 E3', 'Microsoft 365 E5', 'Gener
 const AZURE_ESSENTIALS = ['Azure Commitment Discount', 'Azure plan', 'Azure credits', 'Microsoft Azure Support', 'SCP Commitment Discount'];
 const PER_USER_ESSENTIALS = ['Windows 365 Business', 'Windows 365 Business with Windows Hybrid Benefit', 'Windows 365 Enterprise', 'Professional Direct Support for Microsoft 365'];
 
-const App: React.FC = () => {
+const AppContent: React.FC = () => {
   const theme = useTheme();
   const classNames = getClassNames(theme);
   const [isPanelOpen, setIsPanelOpen] = React.useState(false);
@@ -597,7 +599,7 @@ const App: React.FC = () => {
           return (
             <Stack tokens={{ childrenGap: 4 }}>
               <Text styles={{ root: { fontWeight: 600 } }}>{item.name}</Text>
-              <Link styles={{ root: { fontSize: 12 } }}>{item.details}</Link>
+              <FluentLink styles={{ root: { fontSize: 12 } }}>{item.details}</FluentLink>
             </Stack>
           );
         case 'listPrice':
@@ -864,7 +866,7 @@ const App: React.FC = () => {
                 Big City, WA, 98055<br />
                 United States
               </div>
-              <Link>View customer</Link>
+              <FluentLink>View customer</FluentLink>
 
               <div className={classNames.sidePanelSection}>
                 <div className={classNames.sidePanelSectionTitle}>
@@ -879,14 +881,14 @@ const App: React.FC = () => {
                   <span>Estimated deal value:</span>
                   <span>3,000,000 USD</span>
                 </div>
-                <Link>View deal totality</Link>
+                <FluentLink>View deal totality</FluentLink>
               </div>
 
               <div className={classNames.approvalsSection}>
                 <div className={classNames.sidePanelSectionTitle}>Approvals</div>
                 <div className={classNames.approvalTag}>Finance (Level 2)</div>
                 <div className={classNames.approvalTag}>FieldSales (Blue)</div>
-                <Link styles={{ root: { marginTop: 4, display: 'block' } }}>View approval details</Link>
+                <FluentLink styles={{ root: { marginTop: 4, display: 'block' } }}>View approval details</FluentLink>
               </div>
             </div>
           </div>
@@ -904,6 +906,15 @@ const App: React.FC = () => {
         onBack={() => setIsPanelOpen(false)}
       />
     </div>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <Routes>
+      <Route path="/" element={<AppContent />} />
+      <Route path="/docs" element={<ComponentDocs />} />
+    </Routes>
   );
 };
 
