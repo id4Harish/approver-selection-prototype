@@ -5,14 +5,9 @@ import { useTheme, ITheme } from '@fluentui/react';
 import { Panel, PanelType } from '@fluentui/react/lib/Panel';
 import { PrimaryButton, DefaultButton } from '@fluentui/react/lib/Button';
 import { Text } from '@fluentui/react/lib/Text';
-import { ApproverComboBox } from './ApproverComboBox';
-import { ApproverSelfApproval } from './ApproverSelfApproval';
-import { ApproverDropdown } from './ApproverDropdown';
 import { ApproverComboBoxPersona } from './ApproverComboBoxPersona';
-import { ApproverComboBoxInline } from './ApproverComboBoxInline';
-import { ApproverSearchPicker } from './ApproverSearchPicker';
 import { IApprover } from '../types/models';
-import { APPROVERS, CURRENT_USER, APPROVER_POLICY } from '../data/mockData';
+import { APPROVERS, APPROVER_POLICY } from '../data/mockData';
 
 export interface ISubmitProposalPanelProps {
   isOpen: boolean;
@@ -66,14 +61,7 @@ export const SubmitProposalPanel: React.FC<ISubmitProposalPanelProps> = ({
 }) => {
   const theme = useTheme();
   const classNames = getClassNames(theme);
-  const [selectedApprover, setSelectedApprover] = React.useState<IApprover | undefined>();
-  const [selectedApproverSuggestions, setSelectedApproverSuggestions] = React.useState<IApprover | undefined>();
-  const [selectedSelfEnabled, setSelectedSelfEnabled] = React.useState<IApprover | undefined>();
-  const [selectedSelfDisabled, setSelectedSelfDisabled] = React.useState<IApprover | undefined>();
-  const [selectedApproverDropdown, setSelectedApproverDropdown] = React.useState<IApprover | undefined>();
   const [selectedApproverPersona, setSelectedApproverPersona] = React.useState<IApprover | undefined>();
-  const [selectedApproverInline, setSelectedApproverInline] = React.useState<IApprover | undefined>();
-  const [selectedApproverSearch, setSelectedApproverSearch] = React.useState<IApprover | undefined>();
 
   const handleSubmit = React.useCallback(() => {
     if (selectedApproverPersona) {
@@ -82,14 +70,7 @@ export const SubmitProposalPanel: React.FC<ISubmitProposalPanelProps> = ({
   }, [selectedApproverPersona, onSubmit]);
 
   const handleDismiss = React.useCallback(() => {
-    setSelectedApprover(undefined);
-    setSelectedApproverSuggestions(undefined);
-    setSelectedSelfEnabled(undefined);
-    setSelectedSelfDisabled(undefined);
-    setSelectedApproverDropdown(undefined);
     setSelectedApproverPersona(undefined);
-    setSelectedApproverInline(undefined);
-    setSelectedApproverSearch(undefined);
     onDismiss();
   }, [onDismiss]);
 

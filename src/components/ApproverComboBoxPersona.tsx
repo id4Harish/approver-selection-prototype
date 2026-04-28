@@ -210,7 +210,7 @@ export const ApproverComboBoxPersona: React.FC<IApproverComboBoxPersonaProps> = 
 
   // Helper to get the display text for an approver
   const getDisplayText = React.useCallback(
-    (approver: IApprover) => `${approver.name}(${approver.email})`,
+    (approver: IApprover) => `${approver.name} (${approver.email})`,
     []
   );
 
