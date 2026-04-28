@@ -6,6 +6,7 @@
     "@fluentui/font-icons-mdl2": "^8.5.72",
     "@fluentui/merge-styles": "^8.6.14",
     "@fluentui/react": "^8.125.5",
+    "@fluentui/react-components": "^9.73.8",
     "@fluentui/utilities": "^8.17.2",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",

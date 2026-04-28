@@ -63,18 +63,19 @@ const getClassNames = memoizeFunction((theme: ITheme) =>
       color: theme.semanticColors.errorText,
       fontWeight: 600,
     },
-    // Combo input with chevron — matches Figma's input with dropdown arrow
     inputWrapper: {
       display: 'flex',
       alignItems: 'center',
       border: `1px solid ${theme.palette.neutralSecondary}`,
-      borderRadius: 2,
+      borderRadius: 4,
       padding: '0 8px',
       minHeight: 32,
       backgroundColor: theme.palette.white,
       cursor: 'text',
       ':focus-within': {
         borderColor: theme.palette.themePrimary,
+        borderWidth: 2,
+        padding: '0 7px',
       },
     },
     inputWrapperDisabled: {
@@ -102,7 +103,6 @@ const getClassNames = memoizeFunction((theme: ITheme) =>
       flexShrink: 0,
       marginLeft: 4,
     },
-    // Persona dropdown list
     dropdown: {
       position: 'absolute' as const,
       top: '100%',
@@ -111,12 +111,12 @@ const getClassNames = memoizeFunction((theme: ITheme) =>
       zIndex: 1000,
       backgroundColor: theme.palette.white,
       border: `1px solid ${theme.palette.neutralLight}`,
+      borderRadius: 4,
       boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
       maxHeight: 320,
       overflowY: 'auto' as const,
       marginTop: 2,
     },
-    // Persona row — avatar + name + email (44px height matching Figma)
     personaRow: {
       display: 'flex',
       alignItems: 'center',
@@ -130,6 +130,15 @@ const getClassNames = memoizeFunction((theme: ITheme) =>
     },
     personaRowHighlighted: {
       backgroundColor: '#f3f2f1',
+    },
+    personaRowSelected: {
+      backgroundColor: theme.palette.neutralLighterAlt,
+    },
+    checkIcon: {
+      fontSize: 12,
+      color: theme.palette.neutralPrimary,
+      flexShrink: 0,
+      marginRight: 2,
     },
     personaAvatar: {
       width: 32,
@@ -168,6 +177,14 @@ const getClassNames = memoizeFunction((theme: ITheme) =>
       overflow: 'hidden',
       textOverflow: 'ellipsis',
     },
+    noOptions: {
+      padding: '6px 12px',
+      fontSize: 14,
+      color: theme.palette.neutralSecondary,
+      minHeight: 32,
+      display: 'flex',
+      alignItems: 'center',
+    },
   })
 );
 
@@ -183,7 +200,7 @@ export const ApproverComboBoxPersona: React.FC<IApproverComboBoxPersonaProps> = 
 }) => {
   const theme = useTheme();
   const classNames = getClassNames(theme);
-  const [filterText, setFilterText] = React.useState('');
+  const [query, setQuery] = React.useState('');
   const [isOpen, setIsOpen] = React.useState(false);
   const [highlightedIndex, setHighlightedIndex] = React.useState(-1);
   const inputRef = React.useRef<HTMLInputElement>(null);
@@ -191,18 +208,28 @@ export const ApproverComboBoxPersona: React.FC<IApproverComboBoxPersonaProps> = 
 
   const displayLabel = `${label} (${roleDescription})`;
 
-  // Filter approvers based on typed text
+  // Helper to get the display text for an approver
+  const getDisplayText = React.useCallback(
+    (approver: IApprover) => `${approver.name}(${approver.email})`,
+    []
+  );
+
+  // v9-style filtering: query is always used to filter.
+  // When selected, query = "Name(email)" which only matches that one approver.
+  // When empty, all approvers show. When typing, filters normally.
   const filteredApprovers = React.useMemo(() => {
-    if (!filterText) return approvers;
-    const lower = filterText.toLowerCase();
+    if (!query) return approvers;
+    const lower = query.toLowerCase();
     return approvers.filter((a) => {
       const nameParts = a.name.toLowerCase().split(/\s+/);
       return (
         nameParts.some((part) => part.startsWith(lower)) ||
-        a.email.toLowerCase().startsWith(lower)
+        a.name.toLowerCase().startsWith(lower) ||
+        a.email.toLowerCase().startsWith(lower) ||
+        getDisplayText(a).toLowerCase() === lower
       );
     });
-  }, [approvers, filterText]);
+  }, [approvers, query, getDisplayText]);
 
   // Close dropdown on outside click
   React.useEffect(() => {
@@ -217,19 +244,19 @@ export const ApproverComboBoxPersona: React.FC<IApproverComboBoxPersonaProps> = 
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen]);
 
+  // v9-style onChange: update query, clear selection when user modifies text
   const handleInputChange = React.useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const value = e.target.value;
-      setFilterText(value);
+      setQuery(value);
       setIsOpen(true);
-      // Auto-highlight first result when typing
       setHighlightedIndex(value.length > 0 ? 0 : -1);
-      // Clear selection when user starts editing
-      if (selectedApprover) {
+      // Clear selection when user changes the text away from the selected display
+      if (selectedApprover && value !== getDisplayText(selectedApprover)) {
         onApproverSelected(undefined);
       }
     },
-    [selectedApprover, onApproverSelected]
+    [selectedApprover, onApproverSelected, getDisplayText]
   );
 
   const handleInputBlur = React.useCallback(
@@ -242,23 +269,20 @@ export const ApproverComboBoxPersona: React.FC<IApproverComboBoxPersonaProps> = 
     []
   );
 
+  // v9-style: just open dropdown on focus, no auto-select of text
   const handleInputFocus = React.useCallback(() => {
-    // Always open dropdown on focus - shows all suggestions
     setIsOpen(true);
-    // If there's a selected approver, select all text so user can easily retype
-    if (selectedApprover && inputRef.current) {
-      inputRef.current.select();
-    }
-  }, [selectedApprover]);
+  }, []);
 
+  // v9-style onOptionSelect: always select (no toggle). User clears via backspace.
   const handleSelect = React.useCallback(
     (approver: IApprover) => {
       onApproverSelected(approver);
-      setFilterText(approver.name);
+      setQuery(getDisplayText(approver));
       setIsOpen(false);
       setHighlightedIndex(-1);
     },
-    [onApproverSelected]
+    [onApproverSelected, getDisplayText]
   );
 
   const handleKeyDown = React.useCallback(
@@ -322,7 +346,7 @@ export const ApproverComboBoxPersona: React.FC<IApproverComboBoxPersonaProps> = 
               <input
                 ref={inputRef}
                 className={classNames.input}
-                value={selectedApprover ? filterText || selectedApprover.name : filterText}
+                value={query}
                 onChange={handleInputChange}
                 onFocus={handleInputFocus}
                 onBlur={handleInputBlur}
@@ -338,30 +362,41 @@ export const ApproverComboBoxPersona: React.FC<IApproverComboBoxPersonaProps> = 
               />
             </div>
 
-            {/* Persona dropdown — no header, opens on focus */}
-            {isOpen && !disabled && filteredApprovers.length > 0 && (
+            {isOpen && !disabled && (
               <div className={classNames.dropdown}>
-                {filteredApprovers.map((approver, index) => (
-                  <div
-                    key={approver.key}
-                    className={`${classNames.personaRow} ${
-                      index === highlightedIndex ? classNames.personaRowHighlighted : ''
-                    }`}
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      handleSelect(approver);
-                    }}
-                    onMouseEnter={() => setHighlightedIndex(index)}
-                  >
-                    <div className={classNames.personaAvatar}>
-                      {getInitials(approver.name)}
-                    </div>
-                    <div className={classNames.personaDetails}>
-                      <span className={classNames.personaName}>{approver.name}</span>
-                      <span className={classNames.personaEmail}>{approver.email}</span>
-                    </div>
+                {filteredApprovers.length > 0 ? (
+                  filteredApprovers.map((approver, index) => {
+                    const isSelected = selectedApprover?.key === approver.key;
+                    return (
+                      <div
+                        key={approver.key}
+                        className={`${classNames.personaRow} ${
+                          index === highlightedIndex ? classNames.personaRowHighlighted : ''
+                        } ${isSelected ? classNames.personaRowSelected : ''}`}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          handleSelect(approver);
+                        }}
+                        onMouseEnter={() => setHighlightedIndex(index)}
+                      >
+                        {isSelected && (
+                          <Icon iconName="CheckMark" className={classNames.checkIcon} />
+                        )}
+                        <div className={classNames.personaAvatar}>
+                          {getInitials(approver.name)}
+                        </div>
+                        <div className={classNames.personaDetails}>
+                          <span className={classNames.personaName}>{approver.name}</span>
+                          <span className={classNames.personaEmail}>{approver.email}</span>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className={classNames.noOptions}>
+                    No approvers match your search.
                   </div>
-                ))}
+                )}
               </div>
             )}
           </div>

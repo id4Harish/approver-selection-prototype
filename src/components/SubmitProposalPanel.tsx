@@ -76,10 +76,10 @@ export const SubmitProposalPanel: React.FC<ISubmitProposalPanelProps> = ({
   const [selectedApproverSearch, setSelectedApproverSearch] = React.useState<IApprover | undefined>();
 
   const handleSubmit = React.useCallback(() => {
-    if (selectedApprover) {
-      onSubmit(selectedApprover);
+    if (selectedApproverPersona) {
+      onSubmit(selectedApproverPersona);
     }
-  }, [selectedApprover, onSubmit]);
+  }, [selectedApproverPersona, onSubmit]);
 
   const handleDismiss = React.useCallback(() => {
     setSelectedApprover(undefined);
@@ -100,10 +100,10 @@ export const SubmitProposalPanel: React.FC<ISubmitProposalPanelProps> = ({
       <PrimaryButton
         text="Submit"
         onClick={handleSubmit}
-        disabled={!selectedApprover}
+        disabled={!selectedApproverPersona}
       />
     </div>
-  ), [classNames, onBack, handleSubmit, selectedApprover]);
+  ), [classNames, onBack, handleSubmit, selectedApproverPersona]);
 
   return (
     <Panel
@@ -126,86 +126,7 @@ export const SubmitProposalPanel: React.FC<ISubmitProposalPanelProps> = ({
           Start typing to search for an approver, for policies that aren't automatically selected.
         </Text>
 
-        {/* Variant 1: Default (type to search) */}
-        <ApproverComboBox
-          label={APPROVER_POLICY.label}
-          roleDescription={APPROVER_POLICY.roleDescription}
-          required={APPROVER_POLICY.required}
-          stepNumber={1}
-          approvers={APPROVERS}
-          currentUser={CURRENT_USER}
-          selectedApprover={selectedApprover}
-          onApproverSelected={setSelectedApprover}
-          disabled={false}
-        />
-
-        {/* Variant 2: Suggestions (show all on focus)
-        <div className={classNames.variantSeparator}>Suggestions variant</div>
-
-        <ApproverComboBox
-          label={APPROVER_POLICY.label}
-          roleDescription={APPROVER_POLICY.roleDescription}
-          required={APPROVER_POLICY.required}
-          stepNumber={1}
-          approvers={APPROVERS}
-          currentUser={CURRENT_USER}
-          selectedApprover={selectedApproverSuggestions}
-          onApproverSelected={setSelectedApproverSuggestions}
-          disabled={false}
-          variant="suggestions"
-        />
-        */}
-
-        {/* Variant 3: Self approval enabled
-        <div className={classNames.variantSeparator}>Self approval (eligible)</div>
-
-        <ApproverSelfApproval
-          label={APPROVER_POLICY.label}
-          roleDescription={APPROVER_POLICY.roleDescription}
-          required={APPROVER_POLICY.required}
-          stepNumber={1}
-          approvers={APPROVERS}
-          currentUser={CURRENT_USER}
-          selectedApprover={selectedSelfEnabled}
-          onApproverSelected={setSelectedSelfEnabled}
-          selfApprovalEnabled={true}
-        />
-        */}
-
-        {/* Variant 4: Self approval disabled
-        <div className={classNames.variantSeparator}>Self approval (not eligible)</div>
-
-        <ApproverSelfApproval
-          label={APPROVER_POLICY.label}
-          roleDescription={APPROVER_POLICY.roleDescription}
-          required={APPROVER_POLICY.required}
-          stepNumber={1}
-          approvers={APPROVERS}
-          currentUser={CURRENT_USER}
-          selectedApprover={selectedSelfDisabled}
-          onApproverSelected={setSelectedSelfDisabled}
-          selfApprovalEnabled={false}
-        />
-        */}
-
-        {/* Variant 5: Dropdown with search
-        <div className={classNames.variantSeparator}>Dropdown with search variant</div>
-
-        <ApproverDropdown
-          label={APPROVER_POLICY.label}
-          roleDescription={APPROVER_POLICY.roleDescription}
-          required={APPROVER_POLICY.required}
-          stepNumber={1}
-          approvers={APPROVERS}
-          selectedApprover={selectedApproverDropdown}
-          onApproverSelected={setSelectedApproverDropdown}
-          disabled={false}
-        />
-        */}
-
         {/* Variant 6: Persona suggestions with contextual menu */}
-        <div className={classNames.variantSeparator}>Existing variant</div>
-
         <ApproverComboBoxPersona
           label={APPROVER_POLICY.label}
           roleDescription={APPROVER_POLICY.roleDescription}
@@ -217,7 +138,7 @@ export const SubmitProposalPanel: React.FC<ISubmitProposalPanelProps> = ({
           disabled={false}
         />
 
-        {/* Variant 7: Inline value with clear button */}
+        {/* Variant 7: Inline value with clear button
         <div className={classNames.variantSeparator}>New variant</div>
 
         <ApproverComboBoxInline
@@ -230,6 +151,7 @@ export const SubmitProposalPanel: React.FC<ISubmitProposalPanelProps> = ({
           onApproverSelected={setSelectedApproverInline}
           disabled={false}
         />
+        */}
 
         {/* Variant 8: SearchBox people picker
         <div className={classNames.variantSeparator}>People picker variant</div>
