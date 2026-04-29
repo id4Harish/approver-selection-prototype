@@ -16,6 +16,8 @@ export interface IApproverComboBoxPersonaProps {
   selectedApprover?: IApprover;
   onApproverSelected: (approver: IApprover | undefined) => void;
   disabled?: boolean;
+  error?: boolean;
+  errorMessage?: string;
 }
 
 const getInitials = (name: string): string => {
@@ -67,21 +69,40 @@ const getClassNames = memoizeFunction((theme: ITheme) =>
       display: 'flex',
       alignItems: 'center',
       border: `1px solid ${theme.palette.neutralSecondary}`,
-      borderRadius: 4,
+      borderRadius: 2,
       padding: '0 8px',
       minHeight: 32,
       backgroundColor: theme.palette.white,
       cursor: 'text',
-      ':focus-within': {
-        borderColor: theme.palette.themePrimary,
-        borderWidth: 2,
-        padding: '0 7px',
+      ':hover': {
+        borderColor: theme.palette.neutralPrimary,
       },
+    },
+    inputWrapperFocused: {
+      border: `2px solid ${theme.palette.themePrimary}`,
+      borderRadius: 2,
+      padding: '0 7px',
     },
     inputWrapperDisabled: {
       backgroundColor: theme.palette.neutralLighter,
-      borderColor: theme.palette.neutralLighter,
+      border: 'none',
       cursor: 'default',
+      ':hover': {
+        borderColor: 'transparent',
+      },
+    },
+    inputWrapperError: {
+      border: `1px solid #A80000`,
+      ':hover': {
+        borderColor: '#A80000',
+      },
+    },
+    errorMessage: {
+      fontSize: 12,
+      fontWeight: 400,
+      color: '#A80000',
+      marginTop: 4,
+      fontFamily: '"Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif',
     },
     input: {
       flex: 1,
@@ -111,7 +132,7 @@ const getClassNames = memoizeFunction((theme: ITheme) =>
       zIndex: 1000,
       backgroundColor: theme.palette.white,
       border: `1px solid ${theme.palette.neutralLight}`,
-      borderRadius: 4,
+      borderRadius: 2,
       boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
       maxHeight: 320,
       overflowY: 'auto' as const,
@@ -197,11 +218,14 @@ export const ApproverComboBoxPersona: React.FC<IApproverComboBoxPersonaProps> = 
   selectedApprover,
   onApproverSelected,
   disabled = false,
+  error = false,
+  errorMessage,
 }) => {
   const theme = useTheme();
   const classNames = getClassNames(theme);
   const [query, setQuery] = React.useState('');
   const [isOpen, setIsOpen] = React.useState(false);
+  const [isFocused, setIsFocused] = React.useState(false);
   const [highlightedIndex, setHighlightedIndex] = React.useState(-1);
   const inputRef = React.useRef<HTMLInputElement>(null);
   const wrapperRef = React.useRef<HTMLDivElement>(null);
@@ -263,6 +287,7 @@ export const ApproverComboBoxPersona: React.FC<IApproverComboBoxPersonaProps> = 
     (e: React.FocusEvent<HTMLInputElement>) => {
       if (wrapperRef.current && !wrapperRef.current.contains(e.relatedTarget as Node)) {
         setIsOpen(false);
+        setIsFocused(false);
         setHighlightedIndex(-1);
       }
     },
@@ -272,6 +297,7 @@ export const ApproverComboBoxPersona: React.FC<IApproverComboBoxPersonaProps> = 
   // v9-style: just open dropdown on focus, no auto-select of text
   const handleInputFocus = React.useCallback(() => {
     setIsOpen(true);
+    setIsFocused(true);
   }, []);
 
   // v9-style onOptionSelect: always select (no toggle). User clears via backspace.
@@ -340,7 +366,7 @@ export const ApproverComboBoxPersona: React.FC<IApproverComboBoxPersonaProps> = 
 
           <div style={{ position: 'relative' }}>
             <div
-              className={`${classNames.inputWrapper} ${disabled ? classNames.inputWrapperDisabled : ''}`}
+              className={`${classNames.inputWrapper} ${disabled ? classNames.inputWrapperDisabled : ''} ${isFocused && !disabled ? classNames.inputWrapperFocused : ''} ${error && !disabled ? classNames.inputWrapperError : ''}`}
               onClick={handleWrapperClick}
             >
               <input
@@ -400,6 +426,9 @@ export const ApproverComboBoxPersona: React.FC<IApproverComboBoxPersonaProps> = 
               </div>
             )}
           </div>
+          {error && errorMessage && (
+            <div className={classNames.errorMessage}>{errorMessage}</div>
+          )}
         </div>
       </div>
     </div>

@@ -83,20 +83,36 @@ const getStaticStyles = memoizeFunction((theme: ITheme) =>
     inputWrapper: {
       display: 'flex', alignItems: 'center',
       border: `1px solid ${theme.palette.neutralSecondary}`,
-      borderRadius: 4, padding: '0 8px', minHeight: 32,
+      borderRadius: 2, padding: '0 8px', minHeight: 32,
+      backgroundColor: theme.palette.white,
+    },
+    inputWrapperHovered: {
+      display: 'flex', alignItems: 'center',
+      border: `1px solid ${theme.palette.neutralPrimary}`,
+      borderRadius: 2, padding: '0 8px', minHeight: 32,
       backgroundColor: theme.palette.white,
     },
     inputWrapperFocused: {
       display: 'flex', alignItems: 'center',
       border: `2px solid ${theme.palette.themePrimary}`,
-      borderRadius: 4, padding: '0 7px', minHeight: 32,
+      borderRadius: 2, padding: '0 7px', minHeight: 32,
       backgroundColor: theme.palette.white,
     },
     inputWrapperDisabled: {
       display: 'flex', alignItems: 'center',
-      border: `1px solid ${theme.palette.neutralLighter}`,
-      borderRadius: 4, padding: '0 8px', minHeight: 32,
+      border: 'none',
+      borderRadius: 2, padding: '0 8px', minHeight: 32,
       backgroundColor: theme.palette.neutralLighter,
+    },
+    inputWrapperError: {
+      display: 'flex', alignItems: 'center',
+      border: '1px solid #A80000',
+      borderRadius: 2, padding: '0 8px', minHeight: 32,
+      backgroundColor: theme.palette.white,
+    },
+    errorMessage: {
+      fontSize: 12, fontWeight: 400, color: '#A80000', marginTop: 4,
+      fontFamily: '"Segoe UI", sans-serif',
     },
     inputText: {
       flex: 1, fontSize: 14, lineHeight: '32px',
@@ -109,10 +125,11 @@ const getStaticStyles = memoizeFunction((theme: ITheme) =>
       fontFamily: '"Segoe UI", sans-serif',
     },
     chevron: { fontSize: 12, color: theme.palette.neutralSecondary, marginLeft: 4 },
+    chevronHovered: { fontSize: 12, color: theme.palette.neutralPrimary, marginLeft: 4 },
     dropdown: {
       backgroundColor: theme.palette.white,
       border: `1px solid ${theme.palette.neutralLight}`,
-      borderRadius: 4, boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+      borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
       maxHeight: 320, overflowY: 'auto' as const, marginTop: 2,
     },
     personaRow: {
@@ -275,9 +292,9 @@ const StaticHovered: React.FC<{ s: ReturnType<typeof getStaticStyles> }> = ({ s 
       <div className={s.stepBadge}>1</div>
       <div className={s.fieldContainer}>
         <StaticLabel s={s} />
-        <div className={s.inputWrapperFocused}>
+        <div className={s.inputWrapperHovered}>
           <span className={s.placeholder}>Search by approver name or email</span>
-          <Icon iconName="ChevronDown" className={s.chevron} />
+          <Icon iconName="ChevronDown" className={s.chevronHovered} />
         </div>
         <div className={s.dropdown}>
           <PersonaRow s={s} name={APPROVERS[0].name} email={APPROVERS[0].email} />
@@ -393,6 +410,25 @@ const StaticDisabledSelected: React.FC<{ s: ReturnType<typeof getStaticStyles> }
             <span className={s.inputText} style={{ color: '#a19f9d' }}>{a.name} ({a.email})</span>
             <Icon iconName="ChevronDown" className={s.chevron} />
           </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const StaticError: React.FC<{ s: ReturnType<typeof getStaticStyles> }> = ({ s }) => {
+  const a = APPROVERS[1];
+  return (
+    <div className={s.root}>
+      <div className={s.labelRow}>
+        <div className={s.stepBadge}>1</div>
+        <div className={s.fieldContainer}>
+          <StaticLabel s={s} />
+          <div className={s.inputWrapperError}>
+            <span className={s.inputText}>{a.name} ({a.email})</span>
+            <Icon iconName="ChevronDown" className={s.chevron} />
+          </div>
+          <div className={s.errorMessage}>Error message</div>
         </div>
       </div>
     </div>
@@ -535,6 +571,23 @@ const STATES: StateExample[] = [
 />`,
     render: (s) => <StaticDisabledSelected s={s} />,
   },
+  {
+    id: 'error',
+    title: 'Error',
+    description: 'Error state with red border (#A80000) and error message below the input. Used for validation errors like missing required approver or invalid selection.',
+    code: `<ApproverComboBoxPersona
+  label="FieldSales approver"
+  roleDescription="BD-Regional Director/GM"
+  required={true}
+  stepNumber={1}
+  approvers={APPROVERS}
+  selectedApprover={jonahKlein}
+  onApproverSelected={setSelectedApprover}
+  error={true}
+  errorMessage="Error message"
+/>`,
+    render: (s) => <StaticError s={s} />,
+  },
 ];
 
 // ─── Page styles ─────────────────────────────────────────────────────
@@ -620,6 +673,7 @@ export const ComponentDocs: React.FC = () => {
   const s = getStaticStyles(theme);
   const [selectedApprover, setSelectedApprover] = React.useState<IApprover | undefined>();
   const [isDisabled, setIsDisabled] = React.useState(false);
+  const [isError, setIsError] = React.useState(false);
 
   const handleNavClick = React.useCallback((id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -662,6 +716,8 @@ export const ComponentDocs: React.FC = () => {
               selectedApprover={selectedApprover}
               onApproverSelected={setSelectedApprover}
               disabled={isDisabled}
+              error={isError}
+              errorMessage={isError ? 'Error message' : undefined}
             />
           </div>
           <div className={page.playgroundControls}>
@@ -669,6 +725,12 @@ export const ComponentDocs: React.FC = () => {
               label="Disabled"
               checked={isDisabled}
               onChange={(_, checked) => setIsDisabled(!!checked)}
+              inlineLabel
+            />
+            <Toggle
+              label="Error"
+              checked={isError}
+              onChange={(_, checked) => setIsError(!!checked)}
               inlineLabel
             />
           </div>
