@@ -3,7 +3,6 @@ import { mergeStyleSets } from '@fluentui/merge-styles';
 import { memoizeFunction } from '@fluentui/utilities';
 import { useTheme, ITheme } from '@fluentui/react';
 import { Icon } from '@fluentui/react/lib/Icon';
-import { Label } from '@fluentui/react/lib/Label';
 import { IApprover } from '../types/models';
 
 export interface IApproverComboBoxPersonaProps {
@@ -39,18 +38,28 @@ const getClassNames = memoizeFunction((theme: ITheme) =>
       gap: 12,
     },
     stepBadge: {
+      width: 20,
+      height: 30,
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      width: 24,
-      height: 24,
-      borderRadius: 4,
-      backgroundColor: theme.palette.themeLighter,
-      color: theme.palette.themePrimary,
-      ...theme.fonts.small,
-      fontWeight: 600,
       flexShrink: 0,
-      marginTop: 2,
+    },
+    stepCircle: {
+      width: 20,
+      height: 20,
+      borderRadius: '50%',
+      border: '1px solid #605e5c',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: 12,
+      fontWeight: 600,
+      color: '#605e5c',
+      backgroundColor: theme.palette.white,
+      lineHeight: 1,
+      fontFamily: '"Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif',
+      boxSizing: 'border-box' as const,
     },
     fieldContainer: {
       flex: 1,
@@ -58,8 +67,11 @@ const getClassNames = memoizeFunction((theme: ITheme) =>
     labelText: {
       display: 'flex',
       alignItems: 'baseline',
-      gap: 2,
-      marginBottom: 4,
+      gap: 4,
+      paddingTop: 5,
+      paddingBottom: 5,
+      height: 30,
+      boxSizing: 'border-box' as const,
     },
     requiredStar: {
       color: theme.semanticColors.errorText,
@@ -71,7 +83,8 @@ const getClassNames = memoizeFunction((theme: ITheme) =>
       border: `1px solid ${theme.palette.neutralSecondary}`,
       borderRadius: 2,
       padding: '0 8px',
-      minHeight: 32,
+      height: 32,
+      boxSizing: 'border-box' as const,
       backgroundColor: theme.palette.white,
       cursor: 'text',
       ':hover': {
@@ -110,7 +123,7 @@ const getClassNames = memoizeFunction((theme: ITheme) =>
       outline: 'none',
       fontFamily: '"Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif',
       fontSize: 14,
-      lineHeight: '32px',
+      lineHeight: '20px',
       color: theme.palette.neutralPrimary,
       backgroundColor: 'transparent',
       minWidth: 0,
@@ -230,7 +243,7 @@ export const ApproverComboBoxPersona: React.FC<IApproverComboBoxPersonaProps> = 
   const inputRef = React.useRef<HTMLInputElement>(null);
   const wrapperRef = React.useRef<HTMLDivElement>(null);
 
-  const displayLabel = `${label} (${roleDescription})`;
+  const displayLabel = roleDescription ? `${label} (${roleDescription})` : label;
 
   // Helper to get the display text for an approver
   const getDisplayText = React.useCallback(
@@ -300,6 +313,11 @@ export const ApproverComboBoxPersona: React.FC<IApproverComboBoxPersonaProps> = 
     setIsFocused(true);
   }, []);
 
+  // Open dropdown on click (handles case where input already has focus)
+  const handleInputClick = React.useCallback(() => {
+    setIsOpen(true);
+  }, []);
+
   // v9-style onOptionSelect: always select (no toggle). User clears via backspace.
   const handleSelect = React.useCallback(
     (approver: IApprover) => {
@@ -355,12 +373,16 @@ export const ApproverComboBoxPersona: React.FC<IApproverComboBoxPersonaProps> = 
   return (
     <div className={classNames.root} ref={wrapperRef}>
       <div className={classNames.labelRow}>
-        <div className={classNames.stepBadge}>{stepNumber}</div>
+        {stepNumber > 0 && (
+          <div className={classNames.stepBadge}>
+            <div className={classNames.stepCircle}>{stepNumber}</div>
+          </div>
+        )}
         <div className={classNames.fieldContainer}>
           <div className={classNames.labelText}>
-            <Label styles={{ root: { fontWeight: 600, padding: 0 } }}>
+            <span style={{ fontWeight: 600, fontSize: 14, lineHeight: '20px', color: 'inherit' }}>
               {displayLabel}
-            </Label>
+            </span>
             {required && <span className={classNames.requiredStar}>*</span>}
           </div>
 
@@ -374,6 +396,7 @@ export const ApproverComboBoxPersona: React.FC<IApproverComboBoxPersonaProps> = 
                 className={classNames.input}
                 value={query}
                 onChange={handleInputChange}
+                onClick={handleInputClick}
                 onFocus={handleInputFocus}
                 onBlur={handleInputBlur}
                 onKeyDown={handleKeyDown}

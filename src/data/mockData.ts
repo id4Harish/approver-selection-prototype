@@ -26,3 +26,9 @@ export const APPROVER_POLICY: IApproverPolicy = {
   roleDescription: 'BD-Regional Director/GM',
   required: true,
 };
+
+export const APPROVAL_SEQUENCE: IApproverPolicy[] = [
+  { id: 1, label: 'FieldSales approver', roleDescription: 'BD-Regional Director/GM', required: true },
+  { id: 2, label: 'ACO Approver', roleDescription: '', required: true },
+  { id: 3, label: 'MACC Approver', roleDescription: '', required: true },
+];

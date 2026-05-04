@@ -6,7 +6,7 @@ import { Text } from '@fluentui/react/lib/Text';
 import { Icon } from '@fluentui/react/lib/Icon';
 import { Toggle } from '@fluentui/react/lib/Toggle';
 import { Link } from 'react-router-dom';
-import { APPROVERS, APPROVER_POLICY } from '../data/mockData';
+import { APPROVERS, APPROVER_POLICY, APPROVAL_SEQUENCE } from '../data/mockData';
 import { ApproverComboBoxPersona } from '../components/ApproverComboBoxPersona';
 import { IApprover } from '../types/models';
 
@@ -77,37 +77,37 @@ const getStaticStyles = memoizeFunction((theme: ITheme) =>
       ...theme.fonts.small, fontWeight: 600, flexShrink: 0, marginTop: 2,
     },
     fieldContainer: { flex: 1 },
-    labelText: { display: 'flex', alignItems: 'baseline', gap: 2, marginBottom: 4 },
+    labelText: { display: 'flex', alignItems: 'baseline', gap: 4, paddingTop: 5, paddingBottom: 5, height: 30, boxSizing: 'border-box' as const },
     label: { fontWeight: 600, fontSize: 14, color: theme.palette.neutralPrimary },
     requiredStar: { color: theme.semanticColors.errorText, fontWeight: 600 },
     inputWrapper: {
       display: 'flex', alignItems: 'center',
       border: `1px solid ${theme.palette.neutralSecondary}`,
-      borderRadius: 2, padding: '0 8px', minHeight: 32,
+      borderRadius: 2, padding: '0 8px', height: 32, boxSizing: 'border-box' as const,
       backgroundColor: theme.palette.white,
     },
     inputWrapperHovered: {
       display: 'flex', alignItems: 'center',
       border: `1px solid ${theme.palette.neutralPrimary}`,
-      borderRadius: 2, padding: '0 8px', minHeight: 32,
+      borderRadius: 2, padding: '0 8px', height: 32, boxSizing: 'border-box' as const,
       backgroundColor: theme.palette.white,
     },
     inputWrapperFocused: {
       display: 'flex', alignItems: 'center',
       border: `2px solid ${theme.palette.themePrimary}`,
-      borderRadius: 2, padding: '0 7px', minHeight: 32,
+      borderRadius: 2, padding: '0 7px', height: 32, boxSizing: 'border-box' as const,
       backgroundColor: theme.palette.white,
     },
     inputWrapperDisabled: {
       display: 'flex', alignItems: 'center',
       border: 'none',
-      borderRadius: 2, padding: '0 8px', minHeight: 32,
+      borderRadius: 2, padding: '0 8px', height: 32, boxSizing: 'border-box' as const,
       backgroundColor: theme.palette.neutralLighter,
     },
     inputWrapperError: {
       display: 'flex', alignItems: 'center',
       border: '1px solid #A80000',
-      borderRadius: 2, padding: '0 8px', minHeight: 32,
+      borderRadius: 2, padding: '0 8px', height: 32, boxSizing: 'border-box' as const,
       backgroundColor: theme.palette.white,
     },
     errorMessage: {
@@ -115,12 +115,12 @@ const getStaticStyles = memoizeFunction((theme: ITheme) =>
       fontFamily: '"Segoe UI", sans-serif',
     },
     inputText: {
-      flex: 1, fontSize: 14, lineHeight: '32px',
+      flex: 1, fontSize: 14, lineHeight: '20px',
       color: theme.palette.neutralPrimary,
       fontFamily: '"Segoe UI", sans-serif',
     },
     placeholder: {
-      flex: 1, fontSize: 14, lineHeight: '32px',
+      flex: 1, fontSize: 14, lineHeight: '20px',
       color: theme.palette.neutralSecondary,
       fontFamily: '"Segoe UI", sans-serif',
     },
@@ -211,14 +211,11 @@ const PersonaRow: React.FC<{
 
 const StaticDefault: React.FC<{ s: ReturnType<typeof getStaticStyles> }> = ({ s }) => (
   <div className={s.root}>
-    <div className={s.labelRow}>
-      <div className={s.stepBadge}>1</div>
-      <div className={s.fieldContainer}>
-        <StaticLabel s={s} />
-        <div className={s.inputWrapper}>
-          <span className={s.placeholder}>Search by approver name or email</span>
-          <Icon iconName="ChevronDown" className={s.chevron} />
-        </div>
+    <div className={s.fieldContainer}>
+      <StaticLabel s={s} />
+      <div className={s.inputWrapper}>
+        <span className={s.placeholder}>Search by approver name or email</span>
+        <Icon iconName="ChevronDown" className={s.chevron} />
       </div>
     </div>
   </div>
@@ -226,19 +223,17 @@ const StaticDefault: React.FC<{ s: ReturnType<typeof getStaticStyles> }> = ({ s 
 
 const StaticFocused: React.FC<{ s: ReturnType<typeof getStaticStyles> }> = ({ s }) => (
   <div className={s.root}>
-    <div className={s.labelRow}>
-      <div className={s.stepBadge}>1</div>
-      <div className={s.fieldContainer}>
-        <StaticLabel s={s} />
-        <div className={s.inputWrapperFocused}>
-          <span className={s.placeholder}>Search by approver name or email</span>
-          <Icon iconName="ChevronDown" className={s.chevron} />
-        </div>
-        <div className={s.dropdown}>
-          {APPROVERS.map((a) => (
-            <PersonaRow key={a.key} s={s} name={a.name} email={a.email} />
-          ))}
-        </div>
+    {/* stepBadge hidden: pass stepNumber={0} to show without badge, stepNumber={1} to recall */}
+    <div className={s.fieldContainer}>
+      <StaticLabel s={s} />
+      <div className={s.inputWrapperFocused}>
+        <span className={s.placeholder}>Search by approver name or email</span>
+        <Icon iconName="ChevronDown" className={s.chevron} />
+      </div>
+      <div className={s.dropdown}>
+        {APPROVERS.map((a) => (
+          <PersonaRow key={a.key} s={s} name={a.name} email={a.email} />
+        ))}
       </div>
     </div>
   </div>
@@ -248,20 +243,18 @@ const StaticFiltering: React.FC<{ s: ReturnType<typeof getStaticStyles> }> = ({ 
   const filtered = APPROVERS.filter((a) => a.name.toLowerCase().startsWith('jo'));
   return (
     <div className={s.root}>
-      <div className={s.labelRow}>
-        <div className={s.stepBadge}>1</div>
-        <div className={s.fieldContainer}>
-          <StaticLabel s={s} />
-          <div className={s.inputWrapperFocused}>
-            <span className={s.inputText}>Jo</span>
-            <Icon iconName="ChevronDown" className={s.chevron} />
-          </div>
-          <div className={s.dropdown}>
-            {filtered.map((a, i) => (
-              <PersonaRow key={a.key} s={s} name={a.name} email={a.email}
-                variant={i === 0 ? 'highlighted' : 'default'} />
-            ))}
-          </div>
+      {/* stepBadge hidden: pass stepNumber={0} to show without badge, stepNumber={1} to recall */}
+      <div className={s.fieldContainer}>
+        <StaticLabel s={s} />
+        <div className={s.inputWrapperFocused}>
+          <span className={s.inputText}>Jo</span>
+          <Icon iconName="ChevronDown" className={s.chevron} />
+        </div>
+        <div className={s.dropdown}>
+          {filtered.map((a, i) => (
+            <PersonaRow key={a.key} s={s} name={a.name} email={a.email}
+              variant={i === 0 ? 'highlighted' : 'default'} />
+          ))}
         </div>
       </div>
     </div>
@@ -270,17 +263,15 @@ const StaticFiltering: React.FC<{ s: ReturnType<typeof getStaticStyles> }> = ({ 
 
 const StaticNoResults: React.FC<{ s: ReturnType<typeof getStaticStyles> }> = ({ s }) => (
   <div className={s.root}>
-    <div className={s.labelRow}>
-      <div className={s.stepBadge}>1</div>
-      <div className={s.fieldContainer}>
-        <StaticLabel s={s} />
-        <div className={s.inputWrapperFocused}>
-          <span className={s.inputText}>xyz</span>
-          <Icon iconName="ChevronDown" className={s.chevron} />
-        </div>
-        <div className={s.dropdown}>
-          <div className={s.noOptions}>No approvers match your search.</div>
-        </div>
+    {/* stepBadge hidden: pass stepNumber={0} to show without badge, stepNumber={1} to recall */}
+    <div className={s.fieldContainer}>
+      <StaticLabel s={s} />
+      <div className={s.inputWrapperFocused}>
+        <span className={s.inputText}>xyz</span>
+        <Icon iconName="ChevronDown" className={s.chevron} />
+      </div>
+      <div className={s.dropdown}>
+        <div className={s.noOptions}>No approvers match your search.</div>
       </div>
     </div>
   </div>
@@ -288,19 +279,17 @@ const StaticNoResults: React.FC<{ s: ReturnType<typeof getStaticStyles> }> = ({ 
 
 const StaticHovered: React.FC<{ s: ReturnType<typeof getStaticStyles> }> = ({ s }) => (
   <div className={s.root}>
-    <div className={s.labelRow}>
-      <div className={s.stepBadge}>1</div>
-      <div className={s.fieldContainer}>
-        <StaticLabel s={s} />
-        <div className={s.inputWrapperHovered}>
-          <span className={s.placeholder}>Search by approver name or email</span>
-          <Icon iconName="ChevronDown" className={s.chevronHovered} />
-        </div>
-        <div className={s.dropdown}>
-          <PersonaRow s={s} name={APPROVERS[0].name} email={APPROVERS[0].email} />
-          <PersonaRow s={s} name={APPROVERS[1].name} email={APPROVERS[1].email} variant="hovered" />
-          <PersonaRow s={s} name={APPROVERS[2].name} email={APPROVERS[2].email} />
-        </div>
+    {/* stepBadge hidden: pass stepNumber={0} to show without badge, stepNumber={1} to recall */}
+    <div className={s.fieldContainer}>
+      <StaticLabel s={s} />
+      <div className={s.inputWrapperHovered}>
+        <span className={s.placeholder}>Search by approver name or email</span>
+        <Icon iconName="ChevronDown" className={s.chevronHovered} />
+      </div>
+      <div className={s.dropdown}>
+        <PersonaRow s={s} name={APPROVERS[0].name} email={APPROVERS[0].email} />
+        <PersonaRow s={s} name={APPROVERS[1].name} email={APPROVERS[1].email} variant="hovered" />
+        <PersonaRow s={s} name={APPROVERS[2].name} email={APPROVERS[2].email} />
       </div>
     </div>
   </div>
@@ -308,19 +297,17 @@ const StaticHovered: React.FC<{ s: ReturnType<typeof getStaticStyles> }> = ({ s 
 
 const StaticHighlighted: React.FC<{ s: ReturnType<typeof getStaticStyles> }> = ({ s }) => (
   <div className={s.root}>
-    <div className={s.labelRow}>
-      <div className={s.stepBadge}>1</div>
-      <div className={s.fieldContainer}>
-        <StaticLabel s={s} />
-        <div className={s.inputWrapperFocused}>
-          <span className={s.placeholder}>Search by approver name or email</span>
-          <Icon iconName="ChevronDown" className={s.chevron} />
-        </div>
-        <div className={s.dropdown}>
-          <PersonaRow s={s} name={APPROVERS[0].name} email={APPROVERS[0].email} />
-          <PersonaRow s={s} name={APPROVERS[1].name} email={APPROVERS[1].email} />
-          <PersonaRow s={s} name={APPROVERS[2].name} email={APPROVERS[2].email} variant="highlighted" />
-        </div>
+    {/* stepBadge hidden: pass stepNumber={0} to show without badge, stepNumber={1} to recall */}
+    <div className={s.fieldContainer}>
+      <StaticLabel s={s} />
+      <div className={s.inputWrapperFocused}>
+        <span className={s.placeholder}>Search by approver name or email</span>
+        <Icon iconName="ChevronDown" className={s.chevron} />
+      </div>
+      <div className={s.dropdown}>
+        <PersonaRow s={s} name={APPROVERS[0].name} email={APPROVERS[0].email} />
+        <PersonaRow s={s} name={APPROVERS[1].name} email={APPROVERS[1].email} />
+        <PersonaRow s={s} name={APPROVERS[2].name} email={APPROVERS[2].email} variant="highlighted" />
       </div>
     </div>
   </div>
@@ -330,14 +317,12 @@ const StaticSelected: React.FC<{ s: ReturnType<typeof getStaticStyles> }> = ({ s
   const a = APPROVERS[1];
   return (
     <div className={s.root}>
-      <div className={s.labelRow}>
-        <div className={s.stepBadge}>1</div>
-        <div className={s.fieldContainer}>
-          <StaticLabel s={s} />
-          <div className={s.inputWrapper}>
-            <span className={s.inputText}>{a.name} ({a.email})</span>
-            <Icon iconName="ChevronDown" className={s.chevron} />
-          </div>
+      {/* stepBadge hidden: pass stepNumber={0} to show without badge, stepNumber={1} to recall */}
+      <div className={s.fieldContainer}>
+        <StaticLabel s={s} />
+        <div className={s.inputWrapper}>
+          <span className={s.inputText}>{a.name} ({a.email})</span>
+          <Icon iconName="ChevronDown" className={s.chevron} />
         </div>
       </div>
     </div>
@@ -348,17 +333,15 @@ const StaticSelectedDropdown: React.FC<{ s: ReturnType<typeof getStaticStyles> }
   const a = APPROVERS[1];
   return (
     <div className={s.root}>
-      <div className={s.labelRow}>
-        <div className={s.stepBadge}>1</div>
-        <div className={s.fieldContainer}>
-          <StaticLabel s={s} />
-          <div className={s.inputWrapperFocused}>
-            <span className={s.inputText}>{a.name} ({a.email})</span>
-            <Icon iconName="ChevronDown" className={s.chevron} />
-          </div>
-          <div className={s.dropdown}>
-            <PersonaRow s={s} name={a.name} email={a.email} variant="selected" />
-          </div>
+      {/* stepBadge hidden: pass stepNumber={0} to show without badge, stepNumber={1} to recall */}
+      <div className={s.fieldContainer}>
+        <StaticLabel s={s} />
+        <div className={s.inputWrapperFocused}>
+          <span className={s.inputText}>{a.name} ({a.email})</span>
+          <Icon iconName="ChevronDown" className={s.chevron} />
+        </div>
+        <div className={s.dropdown}>
+          <PersonaRow s={s} name={a.name} email={a.email} variant="selected" />
         </div>
       </div>
     </div>
@@ -367,17 +350,15 @@ const StaticSelectedDropdown: React.FC<{ s: ReturnType<typeof getStaticStyles> }
 
 const StaticClearing: React.FC<{ s: ReturnType<typeof getStaticStyles> }> = ({ s }) => (
   <div className={s.root}>
-    <div className={s.labelRow}>
-      <div className={s.stepBadge}>1</div>
-      <div className={s.fieldContainer}>
-        <StaticLabel s={s} />
-        <div className={s.inputWrapperFocused}>
-          <span className={s.inputText}>Jonah</span>
-          <Icon iconName="ChevronDown" className={s.chevron} />
-        </div>
-        <div className={s.dropdown}>
-          <PersonaRow s={s} name={APPROVERS[1].name} email={APPROVERS[1].email} variant="selected" />
-        </div>
+    {/* stepBadge hidden: pass stepNumber={0} to show without badge, stepNumber={1} to recall */}
+    <div className={s.fieldContainer}>
+      <StaticLabel s={s} />
+      <div className={s.inputWrapperFocused}>
+        <span className={s.inputText}>Jonah</span>
+        <Icon iconName="ChevronDown" className={s.chevron} />
+      </div>
+      <div className={s.dropdown}>
+        <PersonaRow s={s} name={APPROVERS[1].name} email={APPROVERS[1].email} variant="selected" />
       </div>
     </div>
   </div>
@@ -385,14 +366,12 @@ const StaticClearing: React.FC<{ s: ReturnType<typeof getStaticStyles> }> = ({ s
 
 const StaticDisabled: React.FC<{ s: ReturnType<typeof getStaticStyles> }> = ({ s }) => (
   <div className={s.root}>
-    <div className={s.labelRow}>
-      <div className={s.stepBadge}>1</div>
-      <div className={s.fieldContainer}>
-        <StaticLabel s={s} />
-        <div className={s.inputWrapperDisabled}>
-          <span className={s.placeholder}>Search by approver name or email</span>
-          <Icon iconName="ChevronDown" className={s.chevron} />
-        </div>
+    {/* stepBadge hidden: pass stepNumber={0} to show without badge, stepNumber={1} to recall */}
+    <div className={s.fieldContainer}>
+      <StaticLabel s={s} />
+      <div className={s.inputWrapperDisabled}>
+        <span className={s.placeholder}>Search by approver name or email</span>
+        <Icon iconName="ChevronDown" className={s.chevron} />
       </div>
     </div>
   </div>
@@ -402,14 +381,12 @@ const StaticDisabledSelected: React.FC<{ s: ReturnType<typeof getStaticStyles> }
   const a = APPROVERS[1];
   return (
     <div className={s.root}>
-      <div className={s.labelRow}>
-        <div className={s.stepBadge}>1</div>
-        <div className={s.fieldContainer}>
-          <StaticLabel s={s} />
-          <div className={s.inputWrapperDisabled}>
-            <span className={s.inputText} style={{ color: '#a19f9d' }}>{a.name} ({a.email})</span>
-            <Icon iconName="ChevronDown" className={s.chevron} />
-          </div>
+      {/* stepBadge hidden: pass stepNumber={0} to show without badge, stepNumber={1} to recall */}
+      <div className={s.fieldContainer}>
+        <StaticLabel s={s} />
+        <div className={s.inputWrapperDisabled}>
+          <span className={s.inputText} style={{ color: '#a19f9d' }}>{a.name} ({a.email})</span>
+          <Icon iconName="ChevronDown" className={s.chevron} />
         </div>
       </div>
     </div>
@@ -420,16 +397,14 @@ const StaticError: React.FC<{ s: ReturnType<typeof getStaticStyles> }> = ({ s })
   const a = APPROVERS[1];
   return (
     <div className={s.root}>
-      <div className={s.labelRow}>
-        <div className={s.stepBadge}>1</div>
-        <div className={s.fieldContainer}>
-          <StaticLabel s={s} />
-          <div className={s.inputWrapperError}>
-            <span className={s.inputText}>{a.name} ({a.email})</span>
-            <Icon iconName="ChevronDown" className={s.chevron} />
-          </div>
-          <div className={s.errorMessage}>Error message</div>
+      {/* stepBadge hidden: pass stepNumber={0} to show without badge, stepNumber={1} to recall */}
+      <div className={s.fieldContainer}>
+        <StaticLabel s={s} />
+        <div className={s.inputWrapperError}>
+          <span className={s.inputText}>{a.name} ({a.email})</span>
+          <Icon iconName="ChevronDown" className={s.chevron} />
         </div>
+        <div className={s.errorMessage}>Error message</div>
       </div>
     </div>
   );
@@ -455,7 +430,7 @@ const STATES: StateExample[] = [
   label="FieldSales approver"
   roleDescription="BD-Regional Director/GM"
   required={true}
-  stepNumber={1}
+  stepNumber={0}
   approvers={APPROVERS}
   selectedApprover={undefined}
   onApproverSelected={setSelectedApprover}
@@ -521,7 +496,7 @@ const STATES: StateExample[] = [
   {
     id: 'selected-dropdown',
     title: 'Selected + Dropdown Open',
-    description: 'Chevron clicked while selected. Dropdown shows only the selected item with a black checkmark on the left side (before avatar). Other items are filtered out by the query text.',
+    description: 'Input field clicked while selected. Dropdown opens showing the selected item with a checkmark on the left side (before avatar). Other items are filtered out by the query text.',
     code: `// Chevron clicked in selected state:
 // Dropdown: shows ONLY the selected item
 // Checkmark: black, 12px, LEFT of avatar
@@ -548,7 +523,7 @@ const STATES: StateExample[] = [
   label="FieldSales approver"
   roleDescription="BD-Regional Director/GM"
   required={true}
-  stepNumber={1}
+  stepNumber={0}
   approvers={APPROVERS}
   selectedApprover={undefined}
   onApproverSelected={setSelectedApprover}
@@ -563,7 +538,7 @@ const STATES: StateExample[] = [
     code: `<ApproverComboBoxPersona
   label="FieldSales approver"
   roleDescription="BD-Regional Director/GM"
-  stepNumber={1}
+  stepNumber={0}
   approvers={APPROVERS}
   selectedApprover={jonahKlein}
   onApproverSelected={setSelectedApprover}
@@ -579,7 +554,7 @@ const STATES: StateExample[] = [
   label="FieldSales approver"
   roleDescription="BD-Regional Director/GM"
   required={true}
-  stepNumber={1}
+  stepNumber={0}
   approvers={APPROVERS}
   selectedApprover={jonahKlein}
   onApproverSelected={setSelectedApprover}
@@ -674,6 +649,10 @@ export const ComponentDocs: React.FC = () => {
   const [selectedApprover, setSelectedApprover] = React.useState<IApprover | undefined>();
   const [isDisabled, setIsDisabled] = React.useState(false);
   const [isError, setIsError] = React.useState(false);
+  const [isMultiple, setIsMultiple] = React.useState(false);
+  const [selectedApprover1, setSelectedApprover1] = React.useState<IApprover | undefined>();
+  const [selectedApprover2, setSelectedApprover2] = React.useState<IApprover | undefined>();
+  const [selectedApprover3, setSelectedApprover3] = React.useState<IApprover | undefined>();
 
   const handleNavClick = React.useCallback((id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -692,6 +671,9 @@ export const ComponentDocs: React.FC = () => {
             {state.title}
           </a>
         ))}
+        <a className={page.navItem} style={{ fontWeight: 600, marginTop: 8 }} onClick={() => handleNavClick('multiple-approvers')}>
+          Multiple Approvers
+        </a>
       </nav>
 
       <main className={page.content}>
@@ -711,7 +693,7 @@ export const ComponentDocs: React.FC = () => {
               label={APPROVER_POLICY.label}
               roleDescription={APPROVER_POLICY.roleDescription}
               required
-              stepNumber={1}
+              stepNumber={0}
               approvers={APPROVERS}
               selectedApprover={selectedApprover}
               onApproverSelected={setSelectedApprover}
@@ -746,6 +728,133 @@ export const ComponentDocs: React.FC = () => {
             <CodeBlock code={state.code} theme={theme} />
           </section>
         ))}
+
+        {/* Multiple Approvers Variant */}
+        <section id="multiple-approvers" className={page.playgroundSection}>
+          <Text className={page.playgroundTitle} block>Multiple Approvers (Approval Sequence)</Text>
+          <Text className={page.playgroundSubtitle} block>
+            Shows how the component is used in an approval sequence with multiple steps (e.g. Submit Proposal panel).
+            Toggle between single approver (no step badge) and multiple approvers (circled step numbers with connector).
+          </Text>
+          <div className={page.playgroundControls} style={{ marginTop: 0, marginBottom: 16 }}>
+            <Toggle
+              label="Multiple Approvers"
+              checked={isMultiple}
+              onChange={(_, checked) => setIsMultiple(!!checked)}
+              inlineLabel
+            />
+          </div>
+          <div className={page.playgroundContainer} style={{ maxWidth: 560 }}>
+            {isMultiple ? (
+              <div style={{ position: 'relative' }}>
+                {/* Dashed connector line: touches bottom of circle 1 to top of circle 3 */}
+                <div style={{
+                  position: 'absolute',
+                  left: 10,
+                  top: 25,
+                  bottom: 57,
+                  width: 1,
+                  backgroundImage: 'repeating-linear-gradient(to bottom, #8a8886 0, #8a8886 4px, transparent 4px, transparent 8px)',
+                  transform: 'translateX(-0.5px)',
+                }} />
+                {/* Step rows */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  {APPROVAL_SEQUENCE.map((policy) => (
+                    <div key={policy.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                      {/* Step badge: 20x30 outer frame + 20x20 circle per Figma */}
+                      <div style={{
+                        width: 20,
+                        height: 30,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                        position: 'relative',
+                        zIndex: 1,
+                      }}>
+                        <div style={{
+                          width: 20,
+                          height: 20,
+                          borderRadius: '50%',
+                          border: '1px solid #605e5c',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: 12,
+                          fontWeight: 600,
+                          color: '#605e5c',
+                          backgroundColor: '#fff',
+                          lineHeight: 1,
+                          fontFamily: '"Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif',
+                          boxSizing: 'border-box',
+                        }}>
+                          {policy.id}
+                        </div>
+                      </div>
+                      {/* Approver field */}
+                      <div style={{ flex: 1 }}>
+                        <ApproverComboBoxPersona
+                          label={policy.label}
+                          roleDescription={policy.roleDescription}
+                          required={policy.required}
+                          stepNumber={0}
+                          approvers={APPROVERS}
+                          selectedApprover={
+                            policy.id === 1 ? selectedApprover1 :
+                            policy.id === 2 ? selectedApprover2 : selectedApprover3
+                          }
+                          onApproverSelected={
+                            policy.id === 1 ? setSelectedApprover1 :
+                            policy.id === 2 ? setSelectedApprover2 : setSelectedApprover3
+                          }
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <ApproverComboBoxPersona
+                label={APPROVER_POLICY.label}
+                roleDescription={APPROVER_POLICY.roleDescription}
+                required
+                stepNumber={0}
+                approvers={APPROVERS}
+                selectedApprover={selectedApprover1}
+                onApproverSelected={setSelectedApprover1}
+              />
+            )}
+          </div>
+          <Text className={page.codeLabel} block>Code</Text>
+          <CodeBlock code={isMultiple ? `// Multiple approvers with step circles and dashed connector
+// Circle: 20x20, 1px stroke #605e5c, text 12px 600
+// Connector: 1px dashed #8a8886, absolute positioned
+// Row gap: 16px, circle-to-field gap: 8px
+
+{APPROVAL_SEQUENCE.map((policy) => (
+  <div style={{ display: 'flex', gap: 8 }}>
+    <StepCircle number={policy.id} />
+    <ApproverComboBoxPersona
+      label={policy.label}
+      roleDescription={policy.roleDescription}
+      required={policy.required}
+      stepNumber={0}
+      approvers={APPROVERS}
+      selectedApprover={selections[policy.id]}
+      onApproverSelected={(a) => setSelection(policy.id, a)}
+    />
+  </div>
+))}` : `// Single approver (no step badge)
+<ApproverComboBoxPersona
+  label="FieldSales approver"
+  roleDescription="BD-Regional Director/GM"
+  required
+  stepNumber={0}
+  approvers={APPROVERS}
+  selectedApprover={selectedApprover}
+  onApproverSelected={setSelectedApprover}
+/>`} theme={theme} />
+        </section>
       </main>
     </div>
   );
