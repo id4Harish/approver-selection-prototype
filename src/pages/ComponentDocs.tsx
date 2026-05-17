@@ -6,7 +6,7 @@ import { Text } from '@fluentui/react/lib/Text';
 import { Icon } from '@fluentui/react/lib/Icon';
 import { Toggle } from '@fluentui/react/lib/Toggle';
 import { Link } from 'react-router-dom';
-import { APPROVERS, APPROVER_POLICY, APPROVAL_SEQUENCE } from '../data/mockData';
+import { APPROVERS, EMPOWERED_APPROVERS, APPROVER_POLICY, APPROVAL_SEQUENCE } from '../data/mockData';
 import { ApproverComboBoxPersona } from '../components/ApproverComboBoxPersona';
 import { IApprover } from '../types/models';
 
@@ -694,7 +694,8 @@ export const ComponentDocs: React.FC = () => {
               roleDescription={APPROVER_POLICY.roleDescription}
               required
               stepNumber={0}
-              approvers={APPROVERS}
+              approvers={EMPOWERED_APPROVERS}
+              allApprovers={APPROVERS}
               selectedApprover={selectedApprover}
               onApproverSelected={setSelectedApprover}
               disabled={isDisabled}

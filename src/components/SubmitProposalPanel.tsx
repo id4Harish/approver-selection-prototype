@@ -7,7 +7,7 @@ import { PrimaryButton, DefaultButton } from '@fluentui/react/lib/Button';
 import { Text } from '@fluentui/react/lib/Text';
 import { ApproverComboBoxPersona } from './ApproverComboBoxPersona';
 import { IApprover } from '../types/models';
-import { APPROVERS, APPROVER_POLICY } from '../data/mockData';
+import { APPROVERS, EMPOWERED_APPROVERS, APPROVER_POLICY } from '../data/mockData';
 
 export interface ISubmitProposalPanelProps {
   isOpen: boolean;
@@ -62,6 +62,7 @@ export const SubmitProposalPanel: React.FC<ISubmitProposalPanelProps> = ({
   const theme = useTheme();
   const classNames = getClassNames(theme);
   const [selectedApproverPersona, setSelectedApproverPersona] = React.useState<IApprover | undefined>();
+  const [isApproverValid, setIsApproverValid] = React.useState(true);
 
   const handleSubmit = React.useCallback(() => {
     if (selectedApproverPersona) {
@@ -81,7 +82,7 @@ export const SubmitProposalPanel: React.FC<ISubmitProposalPanelProps> = ({
       <PrimaryButton
         text="Submit"
         onClick={handleSubmit}
-        disabled={!selectedApproverPersona}
+        disabled={!selectedApproverPersona || !isApproverValid}
       />
     </div>
   ), [classNames, onBack, handleSubmit, selectedApproverPersona]);
@@ -113,9 +114,11 @@ export const SubmitProposalPanel: React.FC<ISubmitProposalPanelProps> = ({
           roleDescription={APPROVER_POLICY.roleDescription}
           required={APPROVER_POLICY.required}
           stepNumber={0}
-          approvers={APPROVERS}
+          approvers={EMPOWERED_APPROVERS}
+          allApprovers={APPROVERS}
           selectedApprover={selectedApproverPersona}
           onApproverSelected={setSelectedApproverPersona}
+          onValidationChange={setIsApproverValid}
           disabled={false}
         />
 

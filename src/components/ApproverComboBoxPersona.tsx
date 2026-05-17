@@ -3,6 +3,7 @@ import { mergeStyleSets } from '@fluentui/merge-styles';
 import { memoizeFunction } from '@fluentui/utilities';
 import { useTheme, ITheme } from '@fluentui/react';
 import { Icon } from '@fluentui/react/lib/Icon';
+import { ProgressIndicator } from '@fluentui/react/lib/ProgressIndicator';
 import { IApprover } from '../types/models';
 
 export interface IApproverComboBoxPersonaProps {
@@ -11,9 +12,11 @@ export interface IApproverComboBoxPersonaProps {
   required?: boolean;
   stepNumber: number;
   approvers: IApprover[];
+  allApprovers?: IApprover[];
   currentUser?: IApprover;
   selectedApprover?: IApprover;
   onApproverSelected: (approver: IApprover | undefined) => void;
+  onValidationChange?: (isValid: boolean) => void;
   disabled?: boolean;
   error?: boolean;
   errorMessage?: string;
@@ -228,8 +231,10 @@ export const ApproverComboBoxPersona: React.FC<IApproverComboBoxPersonaProps> = 
   required = false,
   stepNumber,
   approvers,
+  allApprovers,
   selectedApprover,
   onApproverSelected,
+  onValidationChange,
   disabled = false,
   error = false,
   errorMessage,
@@ -240,6 +245,8 @@ export const ApproverComboBoxPersona: React.FC<IApproverComboBoxPersonaProps> = 
   const [isOpen, setIsOpen] = React.useState(false);
   const [isFocused, setIsFocused] = React.useState(false);
   const [highlightedIndex, setHighlightedIndex] = React.useState(-1);
+  const [validationError, setValidationError] = React.useState<string | undefined>();
+  const [isValidating, setIsValidating] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
   const wrapperRef = React.useRef<HTMLDivElement>(null);
 
@@ -251,22 +258,20 @@ export const ApproverComboBoxPersona: React.FC<IApproverComboBoxPersonaProps> = 
     []
   );
 
-  // v9-style filtering: query is always used to filter.
-  // When selected, query = "Name(email)" which only matches that one approver.
-  // When empty, all approvers show. When typing, filters normally.
+  // When no query: show empowered approvers only (no validation needed).
+  // When typing: show all approvers from the full list, filter as user types more.
   const filteredApprovers = React.useMemo(() => {
     if (!query) return approvers;
+    const searchList = allApprovers || approvers;
+    if (query.length < 2) return searchList;
     const lower = query.toLowerCase();
-    return approvers.filter((a) => {
-      const nameParts = a.name.toLowerCase().split(/\s+/);
+    return searchList.filter((a) => {
       return (
-        nameParts.some((part) => part.startsWith(lower)) ||
-        a.name.toLowerCase().startsWith(lower) ||
-        a.email.toLowerCase().startsWith(lower) ||
-        getDisplayText(a).toLowerCase() === lower
+        a.name.toLowerCase().includes(lower) ||
+        a.email.toLowerCase().includes(lower)
       );
     });
-  }, [approvers, query, getDisplayText]);
+  }, [approvers, allApprovers, query]);
 
   // Close dropdown on outside click
   React.useEffect(() => {
@@ -288,12 +293,15 @@ export const ApproverComboBoxPersona: React.FC<IApproverComboBoxPersonaProps> = 
       setQuery(value);
       setIsOpen(true);
       setHighlightedIndex(value.length > 0 ? 0 : -1);
-      // Clear selection when user changes the text away from the selected display
+      // Clear selection and validation when user changes text
       if (selectedApprover && value !== getDisplayText(selectedApprover)) {
         onApproverSelected(undefined);
+        setValidationError(undefined);
+        setIsValidating(false);
+        onValidationChange?.(true);
       }
     },
-    [selectedApprover, onApproverSelected, getDisplayText]
+    [selectedApprover, onApproverSelected, getDisplayText, onValidationChange]
   );
 
   const handleInputBlur = React.useCallback(
@@ -302,9 +310,27 @@ export const ApproverComboBoxPersona: React.FC<IApproverComboBoxPersonaProps> = 
         setIsOpen(false);
         setIsFocused(false);
         setHighlightedIndex(-1);
+
+        // Validate on blur: check if selected approver is empowered
+        if (allApprovers && selectedApprover) {
+          const isEmpowered = approvers.some((a) => a.key === selectedApprover.key);
+          if (!isEmpowered) {
+            setValidationError(undefined);
+            setIsValidating(true);
+            onValidationChange?.(false);
+            setTimeout(() => {
+              setIsValidating(false);
+              setValidationError('Selected approver does not have the required empowerment');
+            }, 5000);
+          } else {
+            setValidationError(undefined);
+            setIsValidating(false);
+            onValidationChange?.(true);
+          }
+        }
       }
     },
-    []
+    [allApprovers, approvers, selectedApprover, onValidationChange]
   );
 
   // v9-style: just open dropdown on focus, no auto-select of text
@@ -318,7 +344,7 @@ export const ApproverComboBoxPersona: React.FC<IApproverComboBoxPersonaProps> = 
     setIsOpen(true);
   }, []);
 
-  // v9-style onOptionSelect: always select (no toggle). User clears via backspace.
+  // v9-style onOptionSelect: select without validating. Validation happens on blur.
   const handleSelect = React.useCallback(
     (approver: IApprover) => {
       onApproverSelected(approver);
@@ -388,7 +414,7 @@ export const ApproverComboBoxPersona: React.FC<IApproverComboBoxPersonaProps> = 
 
           <div style={{ position: 'relative' }}>
             <div
-              className={`${classNames.inputWrapper} ${disabled ? classNames.inputWrapperDisabled : ''} ${isFocused && !disabled ? classNames.inputWrapperFocused : ''} ${error && !disabled ? classNames.inputWrapperError : ''}`}
+              className={`${classNames.inputWrapper} ${disabled ? classNames.inputWrapperDisabled : ''} ${isFocused && !disabled ? classNames.inputWrapperFocused : ''} ${(error || validationError) && !disabled ? classNames.inputWrapperError : ''}`}
               onClick={handleWrapperClick}
             >
               <input
@@ -410,6 +436,10 @@ export const ApproverComboBoxPersona: React.FC<IApproverComboBoxPersonaProps> = 
                 style={{ cursor: disabled ? 'default' : 'pointer' }}
               />
             </div>
+
+            {isValidating && (
+              <ProgressIndicator styles={{ root: { padding: 0 }, itemProgress: { padding: 0 } }} />
+            )}
 
             {isOpen && !disabled && (
               <div className={classNames.dropdown}>
@@ -449,8 +479,8 @@ export const ApproverComboBoxPersona: React.FC<IApproverComboBoxPersonaProps> = 
               </div>
             )}
           </div>
-          {error && errorMessage && (
-            <div className={classNames.errorMessage}>{errorMessage}</div>
+          {(error && errorMessage || validationError) && (
+            <div className={classNames.errorMessage}>{validationError || errorMessage}</div>
           )}
         </div>
       </div>
